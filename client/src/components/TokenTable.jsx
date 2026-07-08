@@ -3,36 +3,31 @@ import {
   FaShieldAlt,
 } from "react-icons/fa";
 
-
-const demoTokens = [
-  {
-    name: "Bitcoin",
-    symbol: "BTC",
-    price: "$67,420",
-    change: "+2.4%",
-    score: 96,
-    risk: "Low",
-  },
-  {
-    name: "Ethereum",
-    symbol: "ETH",
-    price: "$3,540",
-    change: "+1.8%",
-    score: 92,
-    risk: "Low",
-  },
-  {
-    name: "Solana",
-    symbol: "SOL",
-    price: "$178",
-    change: "-0.5%",
-    score: 84,
-    risk: "Medium",
-  },
-];
+import { useEffect, useState } from "react";
+import { getTokens } from "../services/api";
 
 
 function TokenTable() {
+
+  const [tokens, setTokens] = useState([]);
+
+
+  useEffect(() => {
+
+    async function loadTokens(){
+
+      const data = await getTokens();
+
+      setTokens(data);
+
+    }
+
+
+    loadTokens();
+
+  }, []);
+
+
 
   return (
 
@@ -44,8 +39,6 @@ function TokenTable() {
     overflow-hidden">
 
 
-      {/* Header */}
-
       <div className="
       p-6
       border-b
@@ -54,20 +47,26 @@ function TokenTable() {
       justify-between
       items-center">
 
+
         <div>
 
           <h2 className="
           text-xl
           font-bold
           text-white">
+
             Token Intelligence
+
           </h2>
+
 
           <p className="
           text-sm
           text-slate-400
           mt-1">
-            AI powered market analysis
+
+            Live blockchain market analysis
+
           </p>
 
         </div>
@@ -79,11 +78,10 @@ function TokenTable() {
           text-2xl"
         />
 
+
       </div>
 
 
-
-      {/* Table */}
 
       <div className="overflow-x-auto">
 
@@ -99,25 +97,36 @@ function TokenTable() {
             border-b
             border-slate-800">
 
+
               <th className="p-5">
                 Token
               </th>
+
 
               <th className="p-5">
                 Price
               </th>
 
+
               <th className="p-5">
                 24H Change
               </th>
 
+
               <th className="p-5">
-                AI Score
+                Volume
               </th>
+
+
+              <th className="p-5">
+                Chain
+              </th>
+
 
               <th className="p-5">
                 Risk
               </th>
+
 
             </tr>
 
@@ -127,7 +136,9 @@ function TokenTable() {
 
           <tbody>
 
-          {demoTokens.map((token)=>(
+
+          {tokens.map((token)=>(
+
 
             <tr
             key={token.symbol}
@@ -140,17 +151,13 @@ function TokenTable() {
 
               <td className="p-5">
 
-                <div>
+                <p className="text-white font-semibold">
+                  {token.name}
+                </p>
 
-                  <p className="text-white font-semibold">
-                    {token.name}
-                  </p>
-
-                  <p className="text-slate-500 text-sm">
-                    {token.symbol}
-                  </p>
-
-                </div>
+                <p className="text-slate-500 text-sm">
+                  {token.symbol}
+                </p>
 
               </td>
 
@@ -176,19 +183,21 @@ function TokenTable() {
 
 
 
-              <td className="p-5">
+              <td className="
+              p-5
+              text-white">
 
-                <span className="
-                bg-cyan-500/10
-                text-cyan-400
-                px-3
-                py-1
-                rounded-full
-                text-sm">
+                ${Number(token.volume).toLocaleString()}
 
-                  {token.score}%
+              </td>
 
-                </span>
+
+
+              <td className="
+              p-5
+              text-cyan-400">
+
+                {token.chain}
 
               </td>
 
@@ -204,7 +213,7 @@ function TokenTable() {
 
                   <FaShieldAlt />
 
-                  {token.risk}
+                  Active
 
                 </span>
 
@@ -212,6 +221,7 @@ function TokenTable() {
 
 
             </tr>
+
 
           ))}
 
