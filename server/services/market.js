@@ -1,61 +1,168 @@
 import axios from "axios";
 
-const COINGECKO_URL =
-  "https://api.coingecko.com/api/v3/coins/markets";
-
-const COINS = [
+const SEARCH_TERMS = [
   "bitcoin",
   "ethereum",
   "solana",
-  "binancecoin",
-  "ripple",
+  "bnb",
+  "xrp",
+  "pepe",
+  "dogecoin",
+  "chainlink",
+  "arbitrum",
+  "optimism"
 ];
 
+
 export async function getMarketTokens() {
+
   try {
-    console.log("📡 CoinGecko'dan veriler alınıyor...");
 
-    const { data } = await axios.get(COINGECKO_URL, {
-      params: {
-        vs_currency: "usd",
-        ids: COINS.join(","),
-        order: "market_cap_desc",
-        per_page: 5,
-        page: 1,
-        sparkline: false,
-        price_change_percentage: "24h",
-      },
-      timeout: 10000,
-      headers: {
-        Accept: "application/json",
-      },
-    });
+    console.log("📡 Token market verileri alınıyor...");
 
-    const tokens = data.map((coin) => ({
-      name: coin.name,
-      symbol: coin.symbol.toUpperCase(),
-      price: `$${Number(coin.current_price).toLocaleString()}`,
-      change: `${Number(
-        coin.price_change_percentage_24h ?? 0
-      ).toFixed(2)}%`,
-      image: coin.image,
-      marketCap: coin.market_cap,
-      volume: coin.total_volume,
-    }));
 
-    console.log(`✅ ${tokens.length} token alındı.`);
+    let allPairs = [];
 
-    return tokens;
-  } catch (error) {
-    console.error("❌ CoinGecko Error");
 
-    if (error.response) {
-      console.error("Status:", error.response.status);
-      console.error(error.response.data);
-    } else {
-      console.error(error.message);
+    for (const term of SEARCH_TERMS) {
+
+      try {
+
+        const { data } = await axios.get(
+          "https://api.dexscreener.com/latest/dex/search",
+          {
+            params: {
+              q: term
+            },
+            timeout: 10000
+          }
+        );
+
+
+        if (data.pairs) {
+
+          allPairs.push(
+            ...data.pairs
+          );
+
+        }
+
+
+      } catch (err) {
+
+        console.log(
+          "Search error:",
+          term
+        );
+
+      }
+
     }
 
+
+    const tokens = [];
+
+    const usedSymbols = new Set();
+
+
+    const sortedPairs =
+      allPairs.sort(
+        (a,b)=>
+          (b.volume?.h24 || 0) -
+          (a.volume?.h24 || 0)
+      );
+
+
+    for (const pair of sortedPairs) {
+
+
+      const volume =
+        pair.volume?.h24 || 0;
+
+
+      const liquidity =
+        pair.liquidity?.usd || 0;
+
+
+      const symbol =
+        pair.baseToken?.symbol;
+
+
+      if (
+        !symbol ||
+        usedSymbols.has(symbol)
+      ) {
+        continue;
+      }
+
+
+      if (
+        volume < 50000 ||
+        liquidity < 50000
+      ) {
+        continue;
+      }
+
+
+      usedSymbols.add(symbol);
+
+
+      tokens.push({
+
+        name:
+          pair.baseToken.name,
+
+        symbol,
+
+        price:
+          `$${Number(
+            pair.priceUsd || 0
+          ).toFixed(6)}`,
+
+        change:
+          `${Number(
+            pair.priceChange?.h24 || 0
+          ).toFixed(2)}%`,
+
+
+        volume,
+
+        liquidity,
+
+        chain:
+          pair.chainId,
+
+        dex:
+          pair.dexId
+
+      });
+
+
+      if(tokens.length >= 10)
+        break;
+
+    }
+
+
+    console.log(
+      `✅ ${tokens.length} token bulundu`
+    );
+
+
+    return tokens;
+
+
+  } catch(error) {
+
+
+    console.error(
+      "❌ Market Error:",
+      error.message
+    );
+
+
     return [];
+
   }
+
 }
