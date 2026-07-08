@@ -1,35 +1,86 @@
-import { useState } from "react";
+import {
+  FaSearch,
+  FaBolt,
+} from "react-icons/fa";
+
 
 function SearchBar() {
-  const [search, setSearch] = useState("");
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-
-    console.log("Token search:", search);
-  };
-
   return (
-    <form 
-      onSubmit={handleSearch}
-      className="w-full flex gap-3 mt-6"
-    >
-      <input
-        type="text"
-        placeholder="Token ara..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="flex-1 bg-gray-900 text-white px-4 py-3 rounded-lg border border-gray-700 outline-none focus:border-blue-500"
-      />
+    <div className="
+    w-full
+    bg-slate-900/80
+    border
+    border-slate-800
+    rounded-2xl
+    p-4
+    flex
+    flex-col
+    md:flex-row
+    gap-4
+    items-center">
+
+      {/* Search Input */}
+
+      <div className="
+      flex
+      items-center
+      flex-1
+      w-full
+      bg-slate-950
+      border
+      border-slate-800
+      rounded-xl
+      px-4
+      py-3">
+
+        <FaSearch
+          className="text-slate-500 mr-3"
+        />
+
+        <input
+          type="text"
+          placeholder="Token ara, kontrat adresi veya wallet gir..."
+          className="
+          bg-transparent
+          outline-none
+          w-full
+          text-white
+          placeholder:text-slate-500"
+        />
+
+      </div>
+
+
+      {/* Button */}
 
       <button
-        type="submit"
-        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
+        className="
+        w-full
+        md:w-auto
+        flex
+        items-center
+        justify-center
+        gap-2
+        bg-cyan-500
+        hover:bg-cyan-400
+        text-black
+        font-semibold
+        px-6
+        py-3
+        rounded-xl
+        transition"
       >
-        Ara
+
+        <FaBolt />
+
+        Analyze
+
       </button>
-    </form>
+
+
+    </div>
   );
 }
+
 
 export default SearchBar;
