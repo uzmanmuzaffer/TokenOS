@@ -29,6 +29,9 @@ export async function getWalletTokens(wallet, chain = "eth") {
       error.response?.data || error.message
     );
 
-    throw new Error("Moralis request failed");
+    throw new Error(
+  JSON.stringify(error.response?.data) ||
+  error.message
+);
   }
 }
