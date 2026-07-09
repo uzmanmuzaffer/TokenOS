@@ -1,7 +1,10 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { getWalletTokens } from "./services/moralis.js";
+import {
+  getWalletTokens,
+  
+} from "./services/moralis.js";
 import { getMarketTokens } from "./services/market.js";
 
 dotenv.config();
@@ -77,14 +80,13 @@ app.post("/api/analyze", async (req, res) => {
 
 
     res.json({
-
-      success: true,
-      wallet,
-      chain: "Ethereum",
-      tokenCount: tokens.length,
-      tokens,
-
-    });
+  success: true,
+  wallet,
+  chain: "Ethereum",
+  
+  tokenCount: tokens.length,
+  tokens,
+});
 
 
   } catch (error) {

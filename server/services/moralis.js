@@ -23,6 +23,7 @@ export async function getWalletTokens(wallet, chain = "eth") {
       "Moralis Status:",
       error.response?.status
     );
+
     console.error(
       "Moralis Error:",
       error.response?.data || error.message

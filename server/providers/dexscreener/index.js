@@ -1,9 +1,7 @@
-const axios = require("axios");
-
-const API_URL = "https://api.dexscreener.com/latest/dex/search";
+import axios from "axios";
 
 const client = axios.create({
-  baseURL: API_URL,
+  baseURL: "https://api.dexscreener.com/latest/dex",
   timeout: 10000,
   headers: {
     Accept: "application/json",
@@ -11,22 +9,20 @@ const client = axios.create({
   },
 });
 
-async function searchTokens(query) {
+/**
+ * DexScreener'da arama yapar.
+ * @param {string} query
+ * @returns {Promise<Array>}
+ */
+export async function searchPairs(query) {
   try {
-    const { data } = await client.get("", {
-      params: {
-        q: query,
-      },
+    const { data } = await client.get("/search", {
+      params: { q: query },
     });
 
-    return data;
+    return data?.pairs ?? [];
   } catch (error) {
-    console.error("[DexScreener]", error.message);
-
-    throw new Error("DexScreener request failed");
+    console.error("[DexScreener Provider]", error.message);
+    throw error;
   }
 }
-
-module.exports = {
-  searchTokens,
-};

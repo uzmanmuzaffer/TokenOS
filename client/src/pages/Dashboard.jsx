@@ -6,7 +6,7 @@ import AnalyticsPanel from "../components/AnalyticsPanel";
 import ChartsPanel from "../components/ChartsPanel";
 import AIInsights from "../components/AIInsights";
 import TokenTable from "../components/TokenTable";
-
+import WalletAnalyzer from "../components/WalletAnalyzer";
 function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-950 text-white flex">
@@ -96,6 +96,11 @@ function Dashboard() {
               </div>
             </div>
           </div>
+{/* Wallet Analyzer */}
+
+<div className="mb-8">
+  <WalletAnalyzer />
+</div>
 
           {/* Token Table */}
           <TokenTable />
