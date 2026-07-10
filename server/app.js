@@ -1,4 +1,5 @@
 import express from "express";
+import { calculateRiskScore } from "./utils/riskScore.js";
 import cors from "cors";
 import dotenv from "dotenv";
 import {
@@ -8,7 +9,7 @@ import {
 import { getMarketTokens } from "./services/market.js";
 
 dotenv.config();
-
+console.log("MORALIS_API_KEY:", process.env.MORALIS_API_KEY);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -77,14 +78,24 @@ app.post("/api/analyze", async (req, res) => {
 
 
     const tokens = await getWalletTokens(wallet, "eth");
+    const risk = calculateRiskScore(tokens);
 
 
     res.json({
   success: true,
   wallet,
   chain: "Ethereum",
-  
+
   tokenCount: tokens.length,
+
+  riskScore: risk.score,
+  riskLevel: risk.level,
+
+  riskDetails: {
+    stableTokens: risk.stableTokens,
+    unknownTokens: risk.unknownTokens,
+  },
+
   tokens,
 });
 
