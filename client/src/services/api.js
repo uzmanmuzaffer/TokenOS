@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://tokenos-api.onrender.com";
 
 // Token List API
 export async function getTokens() {

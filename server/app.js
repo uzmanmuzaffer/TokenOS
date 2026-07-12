@@ -1,11 +1,13 @@
 import express from "express";
-import { calculateRiskScore } from "./utils/riskScore.js";
 import cors from "cors";
 import dotenv from "dotenv";
+
+import { calculateRiskScore } from "./utils/riskScore.js";
+
 import {
   getWalletTokens,
-  
 } from "./services/moralis.js";
+
 import { getMarketTokens } from "./services/market.js";
 
 dotenv.config();
