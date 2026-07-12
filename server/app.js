@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-
+import premiumRoutes from "./routes/premium.js";
 import { calculateRiskScore } from "./utils/riskScore.js";
 
 import {
@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
-
+app.use("/api/premium", premiumRoutes);
 
 // Ana API kontrol
 app.get("/", (req, res) => {
