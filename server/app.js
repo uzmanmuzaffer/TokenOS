@@ -2,7 +2,10 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
+import { x402Middleware } from "./providers/x402/index.js";
 import premiumRoutes from "./routes/premium.js";
+import newsRoutes from "./routes/news.js";
+
 import { calculateRiskScore } from "./utils/riskScore.js";
 
 import {
@@ -11,7 +14,9 @@ import {
 
 import { getMarketTokens } from "./services/market.js";
 
+
 dotenv.config({ path: "./.env" });
+
 
 console.log("ENV:", {
   payTo: process.env.X402_PAY_TO,
@@ -19,106 +24,190 @@ console.log("ENV:", {
   facilitator: process.env.X402_FACILITATOR,
 });
 
+
 console.log("ENV CHECK");
-console.log("GROQ:", process.env.GROQ_API_KEY);
+console.log("GROQ:", process.env.GROQ_API_KEY ? "OK" : "EMPTY");
 console.log("X402_PAY_TO:", process.env.X402_PAY_TO);
 console.log("X402_NETWORK:", process.env.X402_NETWORK);
 console.log("X402_FACILITATOR:", process.env.X402_FACILITATOR);
-console.log("MORALIS_API_KEY:", process.env.MORALIS_API_KEY);
+console.log(
+  "MORALIS_API_KEY:",
+  process.env.MORALIS_API_KEY ? "OK" : "EMPTY"
+);
+
 
 const app = express();
+
 const PORT = process.env.PORT || 5000;
 
+
+// Middlewares
 app.use(cors());
 app.use(express.json());
+// ===============================
+// Crypto News
+// ===============================
 
-// Premium Routes
-app.use("/api/premium", premiumRoutes);
+app.use(
+  "/api/news",
+  newsRoutes
+);
 
-// Ana API
+
+// ===============================
+// Premium AI Report (x402 Protected)
+// ===============================
+
+app.use(
+  "/api/premium",
+  x402Middleware
+);
+
+app.use(
+  "/api/premium",
+  premiumRoutes
+);
+
+
+// ===============================
+// Health Check
+// ===============================
+
 app.get("/", (req, res) => {
+
   res.json({
     success: true,
     app: "TokenOS API",
     version: "1.0.0",
     status: "running",
   });
+
 });
 
-// Market Tokens API
-app.get("/api/tokens", async (req, res) => {
+
+// ===============================
+// Market Tokens
+// ===============================
+
+app.get("/api/tokens", async (req,res)=>{
+
   try {
+
     const tokens = await getMarketTokens();
 
     res.json({
-      success: true,
-      count: tokens.length,
+      success:true,
+      count:tokens.length,
       tokens,
     });
 
-  } catch (error) {
 
-    console.error("Token API Error:", error);
+  } catch(error){
+
+    console.error("Token API Error:",error);
 
     res.status(500).json({
-      success: false,
-      error: error.message,
+      success:false,
+      error:error.message,
     });
 
   }
+
 });
 
-// Wallet Analyze API
-app.post("/api/analyze", async (req, res) => {
+
+
+// ===============================
+// Wallet Analyzer
+// ===============================
+
+app.post("/api/analyze", async(req,res)=>{
+
 
   try {
 
-    const { wallet } = req.body;
 
-    if (!wallet) {
+    const { wallet } = req.body || {};
+
+
+    if(!wallet){
+
       return res.status(400).json({
-        success: false,
-        error: "Wallet address is required",
+        success:false,
+        error:"Wallet address is required",
       });
+
     }
 
-    console.log("🔍 Analyzing:", wallet);
 
-    const tokens = await getWalletTokens(wallet, "eth");
+    console.log("🔍 Analyzing:",wallet);
+
+
+    const tokens = await getWalletTokens(wallet,"eth");
+
+
     const risk = calculateRiskScore(tokens);
 
+
+
     res.json({
-      success: true,
+
+      success:true,
+
       wallet,
-      chain: "Ethereum",
 
-      tokenCount: tokens.length,
+      chain:"Ethereum",
 
-      riskScore: risk.score,
-      riskLevel: risk.level,
+      tokenCount:tokens.length,
 
-      riskDetails: {
-        stableTokens: risk.stableTokens,
-        unknownTokens: risk.unknownTokens,
+
+      riskScore:risk.score,
+
+      riskLevel:risk.level,
+
+
+      riskDetails:{
+        stableTokens:risk.stableTokens,
+        unknownTokens:risk.unknownTokens,
       },
 
+
       tokens,
+
     });
 
-  } catch (error) {
 
-    console.error("Analyze Error:", error);
+
+  }catch(error){
+
+
+    console.error("Analyze Error:",error);
+
 
     res.status(500).json({
-      success: false,
-      error: error.message,
+
+      success:false,
+
+      error:error.message,
+
     });
+
 
   }
 
+
 });
 
-// Server Start
-app.listen(PORT, () => {
-  console.log(`🚀 TokenOS Backend running on http://localhost:${PORT}`);
+
+
+// ===============================
+// Start Server
+// ===============================
+
+app.listen(PORT,()=>{
+
+ console.log(
+  `🚀 TokenOS Backend running on http://localhost:${PORT}`
+ );
+
 });

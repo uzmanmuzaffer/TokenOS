@@ -80,3 +80,42 @@ export async function getAIWalletReport(wallet) {
     };
   }
 }
+// ==========================
+// Crypto News API
+// ==========================
+
+export async function getNews() {
+
+  try {
+
+    const response = await fetch(
+      `${BASE_URL}/api/news`
+    );
+
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+
+    const data = await response.json();
+
+
+    return data.news || [];
+
+
+  } catch(error) {
+
+    console.error(
+      "News API Error:",
+      error
+    );
+
+
+    return [];
+
+  }
+
+}

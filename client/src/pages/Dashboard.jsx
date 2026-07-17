@@ -9,6 +9,7 @@ import ChartsPanel from "../components/ChartsPanel";
 import AIInsights from "../components/AIInsights";
 import TokenTable from "../components/TokenTable";
 import TrendingTokens from "../components/dashboard/TrendingTokens";
+import CryptoNews from "../components/dashboard/CryptoNews";
 import WalletAnalyzer from "../components/WalletAnalyzer";
 import SecurityAlerts from "../components/dashboard/SecurityAlerts";
 
