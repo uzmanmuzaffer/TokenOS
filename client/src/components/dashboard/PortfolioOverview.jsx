@@ -1,55 +1,46 @@
-import React from "react";
 import {
   Wallet,
-  TrendingUp,
   Coins,
-  ShieldAlert,
   Trophy,
   Network,
 } from "lucide-react";
 
-const cards = [
-  {
-    title: "Portfolio Value",
-    value: "$24,560.38",
-    icon: <Wallet size={24} />,
-    color: "bg-blue-500",
-  },
-  {
-    title: "24h Change",
-    value: "+5.42%",
-    icon: <TrendingUp size={24} />,
-    color: "bg-green-500",
-  },
-  {
-    title: "Token Count",
-    value: "38",
-    icon: <Coins size={24} />,
-    color: "bg-purple-500",
-  },
-  {
-    title: "Risk Score",
-    value: "Low",
-    icon: <ShieldAlert size={24} />,
-    color: "bg-red-500",
-  },
-  {
-    title: "Largest Holding",
-    value: "ETH",
-    icon: <Trophy size={24} />,
-    color: "bg-yellow-500",
-  },
-  {
-    title: "Network",
-    value: "Base",
-    icon: <Network size={24} />,
-    color: "bg-cyan-500",
-  },
-];
+import useWalletStore from "../../store/walletStore";
 
 export default function PortfolioOverview() {
+  const { data } = useWalletStore();
+
+  const portfolio = data?.portfolio;
+
+  const cards = [
+    {
+      title: "Analyzed Chains",
+      value: portfolio?.totalChains ?? "-",
+      icon: <Network size={24} />,
+      color: "bg-cyan-500",
+    },
+    {
+      title: "Total Tokens",
+      value: portfolio?.totalTokens ?? "-",
+      icon: <Coins size={24} />,
+      color: "bg-purple-500",
+    },
+    {
+      title: "Largest Holding",
+      value: portfolio?.largestHolding?.symbol ?? "-",
+      icon: <Trophy size={24} />,
+      color: "bg-yellow-500",
+    },
+    {
+      title: "Largest Chain",
+      value: portfolio?.largestHolding?.chain ?? "-",
+      icon: <Wallet size={24} />,
+      color: "bg-blue-500",
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
       {cards.map((card) => (
         <div
           key={card.title}
@@ -57,7 +48,9 @@ export default function PortfolioOverview() {
         >
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-slate-400 text-sm">{card.title}</p>
+              <p className="text-slate-400 text-sm">
+                {card.title}
+              </p>
 
               <h2 className="text-2xl font-bold mt-2">
                 {card.value}

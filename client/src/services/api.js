@@ -1,4 +1,4 @@
-const BASE_URL = "https://tokenos-api.onrender.com";
+const BASE_URL = "http://localhost:5000";
 
 // ==========================
 // Token List API
@@ -26,7 +26,7 @@ export async function getTokens() {
 // ==========================
 export async function analyzeWallet(wallet) {
   try {
-    const response = await fetch(`${BASE_URL}/api/analyze`, {
+  const response = await fetch(`${BASE_URL}/api/analyze-v2`, {  
       method: "POST",
       headers: {
         "Content-Type": "application/json",
