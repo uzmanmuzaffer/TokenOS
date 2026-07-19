@@ -1,5 +1,5 @@
-import { useState } from "react";
-
+import useWalletStore from "../store/walletStore";
+import MultiChainAssets from "../components/wallet/MultiChainAssets";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import SearchBar from "../components/SearchBar";
@@ -17,7 +17,7 @@ import PortfolioOverview from "../components/dashboard/PortfolioOverview";
 
 function Dashboard() {
   // Merkezi state
-  const [walletData, setWalletData] = useState(null);
+  const { data: walletData } = useWalletStore();
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex">
@@ -136,10 +136,13 @@ function Dashboard() {
 
           {/* Wallet Analyzer */}
           <div className="mb-8">
-            <WalletAnalyzer
-              onAnalyze={setWalletData}
-            />
+            <WalletAnalyzer />
+            
           </div>
+          {/* Multi Chain Assets */}
+<div className="mb-8">
+  <MultiChainAssets data={walletData} />
+</div>
           {/* Security Alerts */}
 <div className="mb-8">
   <SecurityAlerts />

@@ -6,6 +6,7 @@ import {
 } from "react-icons/fa";
 import { getAuth, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import WalletButton from "../wallet/components/WalletButton";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -88,6 +89,7 @@ function Navbar() {
 
         {/* User */}
         <div className="flex items-center gap-2">
+          <WalletButton />
           <FaUserCircle
             size={32}
             className="text-slate-400"
@@ -103,6 +105,9 @@ function Navbar() {
             </p>
           </div>
         </div>
+
+        {/* Web3 Wallet */}
+        
 
         {/* Logout Button */}
         <button

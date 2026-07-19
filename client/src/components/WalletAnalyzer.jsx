@@ -19,20 +19,33 @@ export default function WalletAnalyzer() {
     generateAIReport,
   } = useWalletStore();
 
+  const portfolio = data?.portfolio;
+
+  // Yeni API (portfolio.tokens) + Eski API (data.tokens) uyumluluğu
+  const tokens = portfolio?.tokens || data?.tokens || [];
+
   return (
-    <div className="bg-slate-950 rounded-2xl p-8 shadow-xl text-white">
+    <div className="bg-slate-950 rounded-2xl p-8 rounded-2xl shadow-xl border border-slate-800 text-white">
 
       <WalletHeader
         wallet={data?.wallet}
-        chain={data?.chain}
-        tokenCount={data?.tokenCount}
+        chain={
+          data?.chain ??
+          `${portfolio?.totalChains ?? data?.analyzedChains ?? 0} Chains`
+        }
+        tokenCount={
+          portfolio?.totalTokens ??
+          data?.tokenCount ??
+          tokens.length
+        }
       />
 
+      {/* Search */}
       <div className="flex gap-3 mt-8">
 
         <input
-          className="flex-1 p-3 rounded-lg bg-slate-900 border border-slate-700 outline-none"
-          placeholder="0x Wallet Address"
+          className="flex-1 p-3 rounded-lg bg-slate-900 border border-slate-700 outline-none focus:border-blue-500"
+          placeholder="Enter Wallet Address..."
           value={wallet}
           onChange={(e) => setWallet(e.target.value)}
         />
@@ -40,58 +53,82 @@ export default function WalletAnalyzer() {
         <button
           onClick={analyze}
           disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-6 rounded-lg font-semibold"
+          className="px-6 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 font-semibold transition"
         >
           {loading ? "Analyzing..." : "Analyze"}
         </button>
 
         <button
           onClick={generateAIReport}
-          disabled={aiLoading}
-          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 px-6 rounded-lg font-semibold"
+          disabled={aiLoading || !data}
+          className="px-6 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 font-semibold transition"
         >
           {aiLoading ? "Generating..." : "AI Report"}
         </button>
 
       </div>
 
+      {/* Error */}
       {error && (
-        <div className="mt-6 bg-red-900/40 border border-red-700 rounded-xl p-4">
-          <div className="font-bold text-red-400">
+        <div className="mt-6 rounded-xl border border-red-700 bg-red-900/30 p-4">
+          <h3 className="font-bold text-red-400">
             Error
-          </div>
+          </h3>
 
-          <div className="text-red-300 mt-2">
+          <p className="mt-2 text-red-300">
             {error}
-          </div>
+          </p>
         </div>
       )}
 
+      {/* Portfolio Summary */}
       <WalletSummary data={data} />
 
-      <RiskAnalysis riskScore={data?.riskScore} />
+      {/* Risk */}
+      <RiskAnalysis
+  security={data?.security}
+  score={data?.score}
+/>
 
+      {/* AI */}
       <AIWalletReport report={aiReport} />
 
-      {data?.success && (
+      {/* Token Portfolio */}
+      {tokens.length > 0 && (
+
         <div className="mt-8">
 
-          <h3 className="text-2xl font-bold mb-4">
-            Token Portfolio
-          </h3>
+          <div className="flex items-center justify-between mb-5">
+
+            <h2 className="text-2xl font-bold">
+              Token Portfolio
+            </h2>
+
+            <span className="text-sm text-slate-400">
+              {tokens.length} Assets
+            </span>
+
+          </div>
 
           <div className="space-y-3">
 
-            {data.tokens?.map((token, index) => (
+            {tokens.map((token, index) => (
+
               <WalletTokenCard
-                key={`${token.symbol}-${index}`}
+                key={
+                  token.address ||
+                  token.token_address ||
+                  `${token.symbol}-${index}`
+                }
                 token={token}
               />
+
             ))}
 
           </div>
 
         </div>
+
       )}
 
     </div>
