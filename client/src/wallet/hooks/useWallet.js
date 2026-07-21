@@ -3,17 +3,18 @@ import {
   useConnect,
   useDisconnect,
   useBalance,
+  useChainId,
 } from "wagmi";
 
+
 export function useWallet() {
+
   const {
     address,
     isConnected,
-    chain,
-    chainId,
     connector,
-    status,
   } = useAccount();
+
 
   const {
     connect,
@@ -22,67 +23,73 @@ export function useWallet() {
     error,
   } = useConnect();
 
-  const { disconnect } = useDisconnect();
 
-  const { data: balance } = useBalance({
+  const {
+    disconnect,
+  } = useDisconnect();
+
+
+  const chainId = useChainId();
+
+
+  const {
+    data: balance,
+    isLoading: balanceLoading,
+  } = useBalance({
     address,
-    query: {
-      enabled: !!address,
-    },
   });
 
-  const connectByName = async (name) => {
-    try {
-      const walletConnector = connectors.find((item) =>
-        item.name.toLowerCase().includes(name.toLowerCase())
-      );
 
-      if (!walletConnector) {
-        console.warn(`${name} connector bulunamadı.`);
-        return;
-      }
+  const connectWallet = async (connector) => {
+
+    try {
 
       await connect({
-        connector: walletConnector,
+        connector,
       });
-    } catch (err) {
-      console.error(`${name} bağlantı hatası:`, err);
+
+    } catch (error) {
+
+      console.error(
+        "Wallet connection error:",
+        error
+      );
+
     }
+
   };
 
-  const shortAddress = address
-    ? `${address.slice(0, 6)}...${address.slice(-4)}`
-    : "";
+
+  const disconnectWallet = () => {
+
+    disconnect();
+
+  };
+
 
   return {
-    // Account
-    address,
-    shortAddress,
-    isConnected,
-    status,
 
-    // Chain
-    chain,
+    // wallet bilgileri
+    address,
+    isConnected,
+    connector,
     chainId,
 
-    // Wallet
-    connector,
-    walletName: connector?.name ?? null,
+    // balance
+    balance,
+    balanceLoading,
 
-    // Balance
-    balance: balance?.formatted ?? "0",
-    symbol: balance?.symbol ?? "",
+    // bağlantı
+    connectWallet,
+    disconnectWallet,
 
-    // Connect
+    // connector listesi
     connectors,
+
+    // durum
     isPending,
     error,
 
-    connectMetaMask: () => connectByName("metamask"),
-    connectWalletConnect: () => connectByName("walletconnect"),
-    connectCoinbase: () => connectByName("coinbase"),
-
-    // Disconnect
-    disconnect,
   };
+
 }

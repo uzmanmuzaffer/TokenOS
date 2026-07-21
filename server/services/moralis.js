@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getTokenPrice } from "./prices.js";
 
 const BASE_URL = "https://deep-index.moralis.io/api/v2.2";
 
@@ -6,13 +7,12 @@ export async function getWalletTokens(wallet, chain = "eth") {
   const apiKey = process.env.MORALIS_API_KEY;
 
   if (!apiKey) {
-    throw new Error("MORALIS_API_KEY not found in environment variables.");
+    throw new Error("MORALIS_API_KEY not found.");
   }
 
   try {
     console.log("================================");
-    console.log("Moralis API Test");
-    console.log("API Key First 8:", apiKey.substring(0, 8));
+    console.log("Moralis Wallet Analyzer");
     console.log("Wallet:", wallet);
     console.log("Chain:", chain);
     console.log("================================");
@@ -30,14 +30,74 @@ export async function getWalletTokens(wallet, chain = "eth") {
       }
     );
 
-    return data;
+    const tokens = await Promise.all(
+      data.map(async (token) => {
+        const decimals = Number(token.decimals || 18);
+
+        const rawBalance = token.balance || "0";
+
+        const formattedBalance =
+          Number(rawBalance) / Math.pow(10, decimals);
+
+        const market = await getTokenPrice(
+          token.token_address
+        );
+
+        const price = market?.price ?? null;
+
+        const usdValue =
+          price !== null
+            ? formattedBalance * price
+            : null;
+
+        return {
+          ...token,
+
+          formattedBalance,
+
+          price,
+
+          usdValue,
+
+          liquidityUsd:
+            market?.liquidityUsd ?? null,
+
+          volume24h:
+            market?.volume24h ?? null,
+
+          fdv:
+            market?.fdv ?? null,
+
+          dex:
+            market?.dex ?? null,
+
+          pair:
+            market?.pair ?? null,
+
+          chain:
+            market?.chain ?? null,
+        };
+      })
+    );
+
+    // USD değeri yüksek olanlar üstte
+    tokens.sort(
+      (a, b) =>
+        (b.usdValue || 0) -
+        (a.usdValue || 0)
+    );
+
+    return tokens;
   } catch (error) {
-    console.error("Status:", error.response?.status);
-    console.error("Response:", error.response?.data);
-    console.error("Message:", error.message);
+    console.error("Moralis Error");
+    console.error(
+      error.response?.data || error.message
+    );
 
     throw new Error(
-      JSON.stringify(error.response?.data || error.message)
+      JSON.stringify(
+        error.response?.data || error.message
+      )
     );
   }
 }

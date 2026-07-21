@@ -3,6 +3,7 @@ import MultiChainAssets from "../components/wallet/MultiChainAssets";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import SearchBar from "../components/SearchBar";
+import useWalletSync from "../wallet/hooks/useWalletSync";
 import StatsCards from "../components/StatsCards";
 import AnalyticsPanel from "../components/AnalyticsPanel";
 import ChartsPanel from "../components/ChartsPanel";
@@ -16,6 +17,9 @@ import SecurityAlerts from "../components/dashboard/SecurityAlerts";
 import PortfolioOverview from "../components/dashboard/PortfolioOverview";
 
 function Dashboard() {
+
+  useWalletSync();
+
   // Merkezi state
   const { data: walletData } = useWalletStore();
 
