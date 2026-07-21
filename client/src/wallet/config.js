@@ -7,32 +7,19 @@ import {
   coinbaseConnector,
 } from "./connectors";
 
-
 export const config = createConfig({
-
-  chains: [
-    base,
-    mainnet,
-  ],
-
+  chains: [base, mainnet],
 
   connectors: [
-
     metaMaskConnector,
-
     walletConnectConnector,
-
     coinbaseConnector,
-
   ],
 
-
   transports: {
-
     [base.id]: http(),
-
     [mainnet.id]: http(),
-
   },
 
+  ssr: false,
 });

@@ -2,16 +2,18 @@ import {
   useAccount,
   useConnect,
   useDisconnect,
+  useBalance,
 } from "wagmi";
 
-
-export function useWallet(){
-
+export function useWallet() {
   const {
     address,
     isConnected,
+    chain,
+    chainId,
+    connector,
+    status,
   } = useAccount();
-
 
   const {
     connect,
@@ -20,117 +22,67 @@ export function useWallet(){
     error,
   } = useConnect();
 
+  const { disconnect } = useDisconnect();
 
-  const {
-    disconnect,
-  } = useDisconnect();
+  const { data: balance } = useBalance({
+    address,
+    query: {
+      enabled: !!address,
+    },
+  });
 
+  const connectByName = async (name) => {
+    try {
+      const walletConnector = connectors.find((item) =>
+        item.name.toLowerCase().includes(name.toLowerCase())
+      );
 
+      if (!walletConnector) {
+        console.warn(`${name} connector bulunamadı.`);
+        return;
+      }
 
-  const connectMetaMask = async () => {
-
-    const connector = connectors.find(
-      (item) =>
-        item.name
-        .toLowerCase()
-        .includes("metamask")
-    );
-
-
-    if (!connector) {
-
-      console.log("MetaMask bulunamadı");
-
-      return;
-
+      await connect({
+        connector: walletConnector,
+      });
+    } catch (err) {
+      console.error(`${name} bağlantı hatası:`, err);
     }
-
-
-    await connect({
-      connector,
-    });
-
   };
 
-
-
-  const connectWalletConnect = async () => {
-
-    const connector = connectors.find(
-      (item) =>
-        item.name
-        .toLowerCase()
-        .includes("walletconnect")
-    );
-
-
-    if (!connector) {
-
-      console.log("WalletConnect bulunamadı");
-
-      return;
-
-    }
-
-
-    await connect({
-      connector,
-    });
-
-  };
-
-
-
-  const connectCoinbase = async () => {
-
-    const connector = connectors.find(
-      (item) =>
-        item.name
-        .toLowerCase()
-        .includes("coinbase")
-    );
-
-
-    if (!connector) {
-
-      console.log("Coinbase bulunamadı");
-
-      return;
-
-    }
-
-
-    await connect({
-      connector,
-    });
-
-  };
-
-
+  const shortAddress = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : "";
 
   return {
-
+    // Account
     address,
-
+    shortAddress,
     isConnected,
+    status,
 
+    // Chain
+    chain,
+    chainId,
 
+    // Wallet
+    connector,
+    walletName: connector?.name ?? null,
+
+    // Balance
+    balance: balance?.formatted ?? "0",
+    symbol: balance?.symbol ?? "",
+
+    // Connect
     connectors,
-
     isPending,
-
     error,
 
+    connectMetaMask: () => connectByName("metamask"),
+    connectWalletConnect: () => connectByName("walletconnect"),
+    connectCoinbase: () => connectByName("coinbase"),
 
-    connectMetaMask,
-
-    connectWalletConnect,
-
-    connectCoinbase,
-
-
+    // Disconnect
     disconnect,
-
   };
-
 }
