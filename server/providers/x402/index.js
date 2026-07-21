@@ -51,7 +51,7 @@ export const x402Middleware =
 
     {
 
-      "/api/premium/ai-report":
+      "POST /api/premium/ai-report":
 
       {
 

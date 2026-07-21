@@ -1,123 +1,75 @@
-import {
-  FaBell,
-  FaSearch,
-  FaCircle,
-  FaUserCircle,
-} from "react-icons/fa";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { getAuth, signOut } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+
 import WalletButton from "../wallet/components/WalletButton";
+import PremiumButton from "./premium/PremiumButton";
+import PremiumModal from "./premium/PremiumModal";
 
 function Navbar() {
   const navigate = useNavigate();
   const auth = getAuth();
 
+  const [premiumOpen, setPremiumOpen] = useState(false);
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
       navigate("/login");
-    } catch (error) {
-      console.error("Logout Error:", error);
+    } catch (err) {
+      console.error("Logout error:", err);
     }
   };
 
   return (
-    <nav
-      className="w-full h-20 px-8 flex items-center justify-between
-      bg-slate-950/80 backdrop-blur-xl border-b border-slate-800"
-    >
-      {/* Left */}
-      <div>
-        <h1 className="text-xl font-bold text-white">
-          TokenOS
-        </h1>
+    <>
+      <nav className="sticky top-0 z-50 w-full border-b border-slate-800 bg-[#0B1120]">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+          {/* Logo */}
+          <Link to="/" className="text-2xl font-bold text-white">
+            Token<span className="text-cyan-400">OS</span>
+          </Link>
 
-        <p className="text-xs text-slate-400">
-          AI Crypto Intelligence Platform
-        </p>
-      </div>
+          {/* Menü */}
+          <div className="hidden items-center gap-8 text-slate-300 md:flex">
+            <Link to="/dashboard" className="transition hover:text-white">
+              Dashboard
+            </Link>
 
-      {/* Search */}
-      <div
-        className="hidden md:flex items-center
-        bg-slate-900 border border-slate-800
-        rounded-xl px-4 py-2 w-96"
-      >
-        <FaSearch className="text-slate-500 mr-3" />
+            <Link to="/markets" className="transition hover:text-white">
+              Markets
+            </Link>
 
-        <input
-          type="text"
-          placeholder="Search token, wallet..."
-          className="bg-transparent outline-none
-          text-sm text-white w-full
-          placeholder:text-slate-500"
-        />
-      </div>
+            <Link to="/wallet" className="transition hover:text-white">
+              Wallet
+            </Link>
 
-      {/* Right */}
-      <div className="flex items-center gap-5">
-        {/* API Status */}
-        <div
-          className="flex items-center gap-2
-          bg-slate-900 px-3 py-2 rounded-xl"
-        >
-          <FaCircle className="text-green-400 text-xs" />
+            <Link to="/news" className="transition hover:text-white">
+              News
+            </Link>
+          </div>
 
-          <span className="text-sm text-slate-300">
-            Online
-          </span>
-        </div>
+          {/* Sağ Menü */}
+          <div className="flex items-center gap-3">
+            <PremiumButton onClick={() => setPremiumOpen(true)} />
 
-        {/* Notification */}
-        <button
-          className="relative text-slate-400
-          hover:text-white transition"
-        >
-          <FaBell size={20} />
+            <WalletButton />
 
-          <span
-            className="
-            absolute -top-2 -right-2
-            w-4 h-4 rounded-full
-            bg-cyan-500 text-[10px]
-            flex items-center justify-center
-            text-white"
-          >
-            3
-          </span>
-        </button>
-
-        {/* User */}
-        <div className="flex items-center gap-2">
-          <WalletButton />
-          <FaUserCircle
-            size={32}
-            className="text-slate-400"
-          />
-
-          <div className="hidden lg:block">
-            <p className="text-sm text-white">
-              {auth.currentUser?.email || "User"}
-            </p>
-
-            <p className="text-xs text-slate-500">
-              Free Plan
-            </p>
+            <button
+              onClick={handleLogout}
+              className="rounded-lg bg-red-600 px-4 py-2 text-white transition hover:bg-red-700"
+            >
+              Logout
+            </button>
           </div>
         </div>
+      </nav>
 
-        {/* Web3 Wallet */}
-        
-
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition duration-200"
-        >
-          Logout
-        </button>
-      </div>
-    </nav>
+      <PremiumModal
+        isOpen={premiumOpen}
+        onClose={() => setPremiumOpen(false)}
+      />
+    </>
   );
 }
 

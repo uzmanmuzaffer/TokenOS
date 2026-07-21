@@ -33,55 +33,38 @@ dotenv.config({
 });
 
 
-
 console.log("ENV:", {
-
-  payTo:
-  process.env.X402_PAY_TO,
-
-  network:
-  process.env.X402_NETWORK,
-
-  facilitator:
-  process.env.X402_FACILITATOR
-
+  payTo: process.env.X402_PAY_TO,
+  network: process.env.X402_NETWORK,
+  facilitator: process.env.X402_FACILITATOR
 });
-
 
 
 console.log("ENV CHECK");
 
 console.log(
 "GROQ:",
-process.env.GROQ_API_KEY
-?"OK"
-:"EMPTY"
+process.env.GROQ_API_KEY ? "OK" : "EMPTY"
 );
-
 
 console.log(
 "X402_PAY_TO:",
 process.env.X402_PAY_TO
 );
 
-
 console.log(
 "X402_NETWORK:",
 process.env.X402_NETWORK
 );
-
 
 console.log(
 "X402_FACILITATOR:",
 process.env.X402_FACILITATOR
 );
 
-
 console.log(
 "MORALIS_API_KEY:",
-process.env.MORALIS_API_KEY
-?"OK"
-:"EMPTY"
+process.env.MORALIS_API_KEY ? "OK" : "EMPTY"
 );
 
 
@@ -93,16 +76,13 @@ process.env.PORT || 5000;
 
 
 
-
 // ===============================
 // GLOBAL MIDDLEWARE
 // ===============================
 
-
 app.use(
 cors()
 );
-
 
 app.use(
 express.json()
@@ -114,7 +94,6 @@ express.json()
 // ===============================
 // NEWS
 // ===============================
-
 
 app.use(
 "/api/news",
@@ -130,16 +109,11 @@ newsRoutes
 // X402 PAYMENT PROTECTED
 // ===============================
 
-
-app.use(
-  x402Middleware
-);
-
 app.use(
   "/api/premium",
+  x402Middleware,
   premiumRoutes
 );
-
 
 
 
@@ -149,7 +123,6 @@ app.use(
 // ===============================
 // HEALTH CHECK
 // ===============================
-
 
 app.get(
 "/",
@@ -179,19 +152,15 @@ status:"running"
 // MARKET TOKENS
 // ===============================
 
-
 app.get(
 "/api/tokens",
 
 async(req,res)=>{
 
-
 try{
-
 
 const tokens =
 await getMarketTokens();
-
 
 
 res.json({
@@ -209,12 +178,10 @@ tokens
 }
 catch(error){
 
-
 console.error(
 "Token API Error:",
 error
 );
-
 
 
 res.status(500)
@@ -226,11 +193,10 @@ error:error.message
 
 });
 
-
 }
 
-
 });
+
 
 
 
@@ -242,24 +208,19 @@ error:error.message
 // WALLET ANALYZER V1
 // ===============================
 
-
 app.post(
 "/api/analyze",
 
 async(req,res)=>{
 
-
 try{
-
 
 const {
 wallet
 }=req.body || {};
 
 
-
-if(!wallet)
-{
+if(!wallet){
 
 return res.status(400)
 .json({
@@ -270,7 +231,6 @@ error:
 "Wallet address is required"
 
 });
-
 
 }
 
@@ -346,7 +306,6 @@ error
 );
 
 
-
 res.status(500)
 .json({
 
@@ -358,7 +317,6 @@ error:error.message
 
 
 }
-
 
 });
 
@@ -375,7 +333,6 @@ error:error.message
 // MULTI CHAIN
 // ===============================
 
-
 app.post(
 "/api/analyze-v2",
 
@@ -391,8 +348,7 @@ wallet
 
 
 
-if(!wallet)
-{
+if(!wallet){
 
 return res.status(400)
 .json({
@@ -404,9 +360,7 @@ error:
 
 });
 
-
 }
-
 
 
 
@@ -417,7 +371,6 @@ wallet
 
 
 
-
 const results =
 await analyzeWalletEngine(
 wallet
@@ -425,12 +378,10 @@ wallet
 
 
 
-
 const portfolio =
 buildPortfolio(
 results
 );
-
 
 
 
@@ -451,7 +402,6 @@ portfolio.portfolio,
 results
 
 });
-
 
 
 }
@@ -477,7 +427,6 @@ error:error.message
 
 }
 
-
 });
 
 
@@ -490,15 +439,12 @@ error:error.message
 // SERVER START
 // ===============================
 
-
 app.listen(
 PORT,
 ()=>{
 
-
 console.log(
 `🚀 TokenOS Backend running on http://localhost:${PORT}`
 );
-
 
 });

@@ -1,21 +1,31 @@
 import axios from "axios";
-import { getTokenPrice } from "./prices.js";
 
 const BASE_URL = "https://deep-index.moralis.io/api/v2.2";
 
-export async function getWalletTokens(wallet, chain = "eth") {
+
+export async function getWalletTokens(
+  wallet,
+  chain = "eth"
+) {
+
   const apiKey = process.env.MORALIS_API_KEY;
 
+
   if (!apiKey) {
-    throw new Error("MORALIS_API_KEY not found.");
+    throw new Error(
+      "MORALIS_API_KEY not found."
+    );
   }
 
+
   try {
+
     console.log("================================");
     console.log("Moralis Wallet Analyzer");
     console.log("Wallet:", wallet);
     console.log("Chain:", chain);
     console.log("================================");
+
 
     const { data } = await axios.get(
       `${BASE_URL}/${wallet}/erc20`,
@@ -23,6 +33,7 @@ export async function getWalletTokens(wallet, chain = "eth") {
         params: {
           chain,
         },
+
         headers: {
           accept: "application/json",
           "x-api-key": apiKey,
@@ -30,74 +41,77 @@ export async function getWalletTokens(wallet, chain = "eth") {
       }
     );
 
-    const tokens = await Promise.all(
-      data.map(async (token) => {
-        const decimals = Number(token.decimals || 18);
 
-        const rawBalance = token.balance || "0";
 
-        const formattedBalance =
-          Number(rawBalance) / Math.pow(10, decimals);
+    const tokens = data.map((token) => {
 
-        const market = await getTokenPrice(
-          token.token_address
-        );
+      const decimals =
+        Number(token.decimals || 18);
 
-        const price = market?.price ?? null;
 
-        const usdValue =
-          price !== null
-            ? formattedBalance * price
-            : null;
+      const rawBalance =
+        token.balance || "0";
 
-        return {
-          ...token,
 
-          formattedBalance,
+      const formattedBalance =
+        Number(rawBalance) /
+        Math.pow(10, decimals);
 
-          price,
 
-          usdValue,
 
-          liquidityUsd:
-            market?.liquidityUsd ?? null,
+      return {
 
-          volume24h:
-            market?.volume24h ?? null,
+        ...token,
 
-          fdv:
-            market?.fdv ?? null,
+        formattedBalance,
 
-          dex:
-            market?.dex ?? null,
+        // Premium AI için şimdilik fiyat yok
+        price: null,
 
-          pair:
-            market?.pair ?? null,
+        usdValue: null,
 
-          chain:
-            market?.chain ?? null,
-        };
-      })
-    );
+        liquidityUsd: null,
 
-    // USD değeri yüksek olanlar üstte
-    tokens.sort(
-      (a, b) =>
-        (b.usdValue || 0) -
-        (a.usdValue || 0)
-    );
+        volume24h: null,
+
+        fdv: null,
+
+        dex: null,
+
+        pair: null,
+
+        chain,
+
+      };
+
+    });
+
+
 
     return tokens;
-  } catch (error) {
-    console.error("Moralis Error");
+
+
+  } catch(error) {
+
+
     console.error(
-      error.response?.data || error.message
+      "Moralis Error"
     );
+
+
+    console.error(
+      error.response?.data ||
+      error.message
+    );
+
 
     throw new Error(
       JSON.stringify(
-        error.response?.data || error.message
+        error.response?.data ||
+        error.message
       )
     );
+
   }
+
 }
