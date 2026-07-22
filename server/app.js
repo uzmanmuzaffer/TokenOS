@@ -6,6 +6,7 @@ import { x402Middleware } from "./providers/x402/index.js";
 
 import premiumRoutes from "./routes/premium.js";
 import newsRoutes from "./routes/news.js";
+import paymentRoutes from "./routes/payment.js";
 
 import {
   analyzeWallet as analyzeWalletEngine
@@ -100,6 +101,11 @@ app.use(
 newsRoutes
 );
 
+app.use(
+  "/api/payment",
+  paymentRoutes
+);
+
 
 
 
@@ -109,9 +115,10 @@ newsRoutes
 // X402 PAYMENT PROTECTED
 // ===============================
 
+app.use(x402Middleware);
+
 app.use(
   "/api/premium",
-  x402Middleware,
   premiumRoutes
 );
 
@@ -439,12 +446,7 @@ error:error.message
 // SERVER START
 // ===============================
 
-app.listen(
-PORT,
-()=>{
-
-console.log(
-`🚀 TokenOS Backend running on http://localhost:${PORT}`
-);
-
+app.listen(PORT, () => {
+  console.log(`🚀 TokenOS Backend running on http://localhost:${PORT}`);
 });
+

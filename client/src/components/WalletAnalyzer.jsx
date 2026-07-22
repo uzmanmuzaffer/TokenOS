@@ -8,16 +8,12 @@ import WalletTokenCard from "./wallet/WalletTokenCard";
 import RiskAnalysis from "./wallet/RiskAnalysis";
 import AIWalletReport from "./wallet/AIWalletReport";
 
-
 export default function WalletAnalyzer() {
-
-
   const [showAllTokens, setShowAllTokens] = useState(false);
-
-
 
   const {
     wallet,
+    setWallet,
     data,
     loading,
     aiReport,
@@ -27,27 +23,15 @@ export default function WalletAnalyzer() {
     generateAIReport,
   } = useWalletStore();
 
-
-
   const portfolio = data?.portfolio;
 
-
-
-  const tokens =
-    portfolio?.tokens ||
-    data?.tokens ||
-    [];
-
-
+  const tokens = portfolio?.tokens || data?.tokens || [];
 
   const visibleTokens = showAllTokens
     ? tokens
     : tokens.slice(0, 5);
 
-
-
   return (
-
     <div
       className="
         bg-slate-950
@@ -59,38 +43,26 @@ export default function WalletAnalyzer() {
         text-white
       "
     >
-
-
-
       <WalletHeader
-
-        wallet={
-          data?.wallet ||
-          wallet
-        }
-
+        wallet={data?.wallet || wallet}
         chain={
           data?.chain ??
           `${portfolio?.totalChains ?? data?.analyzedChains ?? 0} Chains`
         }
-
         tokenCount={
           portfolio?.totalTokens ??
           data?.tokenCount ??
           tokens.length
         }
-
       />
 
-
-
-
       {/* Wallet Actions */}
-
       <div className="flex gap-3 mt-8 items-center">
-
-
-        <div
+        <input
+          type="text"
+          value={wallet}
+          onChange={(e) => setWallet(e.target.value)}
+          placeholder="Paste wallet address (0x...)"
           className="
             flex-1
             p-3
@@ -98,29 +70,16 @@ export default function WalletAnalyzer() {
             bg-slate-900
             border
             border-slate-700
-            text-slate-300
-            truncate
+            text-white
+            placeholder:text-slate-500
+            outline-none
+            focus:border-blue-500
           "
-        >
-
-          {wallet
-            ? wallet
-            : "Wallet not connected"
-          }
-
-        </div>
-
-
+        />
 
         <button
-
           onClick={analyze}
-
-          disabled={
-            loading ||
-            !wallet
-          }
-
+          disabled={loading || !wallet}
           className="
             px-6
             py-3
@@ -130,27 +89,13 @@ export default function WalletAnalyzer() {
             disabled:opacity-50
             font-semibold
           "
-
         >
-
-          {loading
-            ? "Analyzing..."
-            : "Analyze"
-          }
-
+          {loading ? "Analyzing..." : "Analyze"}
         </button>
 
-
-
         <button
-
           onClick={generateAIReport}
-
-          disabled={
-            aiLoading ||
-            !data
-          }
-
+          disabled={aiLoading || !data}
           className="
             px-6
             py-3
@@ -160,27 +105,13 @@ export default function WalletAnalyzer() {
             disabled:opacity-50
             font-semibold
           "
-
         >
-
-          {aiLoading
-            ? "Generating..."
-            : "AI Report"
-          }
-
+          {aiLoading ? "Generating..." : "AI Report"}
         </button>
-
-
       </div>
 
-
-
-
-
       {/* Error */}
-
       {error && (
-
         <div
           className="
             mt-6
@@ -191,90 +122,37 @@ export default function WalletAnalyzer() {
             p-4
           "
         >
-
           <h3 className="font-bold text-red-400">
             Error
           </h3>
 
-
           <p className="mt-2 text-red-300">
             {error}
           </p>
-
-
         </div>
-
       )}
 
-
-
-
-
-
       {/* Portfolio */}
-
       <div className="mt-8">
-
-        <WalletSummary
-          data={data}
-        />
-
+        <WalletSummary data={data} />
       </div>
-
-
-
-
-
 
       {/* Risk */}
-
       <div className="mt-8">
-
         <RiskAnalysis
-
-          security={
-            data?.security
-          }
-
-          score={
-            data?.score
-          }
-
+          security={data?.security}
+          score={data?.score}
         />
-
       </div>
-
-
-
-
-
 
       {/* AI Report */}
-
       <div className="mt-8">
-
-        <AIWalletReport
-
-          report={aiReport}
-
-        />
-
+        <AIWalletReport report={aiReport} />
       </div>
 
-
-
-
-
-
-
-
       {/* Token Portfolio */}
-
       {tokens.length > 0 && (
-
         <div className="mt-8">
-
-
           <div
             className="
               flex
@@ -283,65 +161,33 @@ export default function WalletAnalyzer() {
               mb-5
             "
           >
-
             <h2 className="text-2xl font-bold">
-
               Token Portfolio
-
             </h2>
 
-
             <span className="text-sm text-slate-400">
-
               {tokens.length} Assets
-
             </span>
-
-
           </div>
-
-
-
-
 
           <div className="space-y-3">
-
-
-            {visibleTokens.map(
-
-              (token, index) => (
-
-                <WalletTokenCard
-
-                  key={
-                    token.address ||
-                    token.token_address ||
-                    `${token.symbol}-${index}`
-                  }
-
-                  token={token}
-
-                />
-
-              )
-
-            )}
-
-
+            {visibleTokens.map((token, index) => (
+              <WalletTokenCard
+                key={
+                  token.address ||
+                  token.token_address ||
+                  `${token.symbol}-${index}`
+                }
+                token={token}
+              />
+            ))}
           </div>
 
-
-
-
-
           {tokens.length > 5 && (
-
             <button
-
               onClick={() =>
                 setShowAllTokens(!showAllTokens)
               }
-
               className="
                 mt-5
                 px-5
@@ -351,28 +197,14 @@ export default function WalletAnalyzer() {
                 hover:bg-slate-700
                 text-white
               "
-
             >
-
               {showAllTokens
                 ? "Show Less"
-                : `View All ${tokens.length} Tokens`
-              }
-
-
+                : `View All ${tokens.length} Tokens`}
             </button>
-
           )}
-
-
         </div>
-
       )}
-
-
-
     </div>
-
   );
-
 }
