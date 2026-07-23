@@ -1,91 +1,42 @@
-import { Router } from "express";
-import { buildPremiumReport } from "../services/reportBuilder.js";
+import express from "express";
+import { x402Middleware } from "../providers/x402/index.js";
+import { buildPremiumReport } from "../services/ai.js";
 
-
-const router = Router();
-
-
+const router = express.Router();
 
 router.post(
   "/ai-report",
 
+  x402Middleware,
+
   async (req, res) => {
-
-    console.log(
-      "💎 PREMIUM REQUEST:",
-      req.body
-    );
-
-
     try {
-
-      const {
-        wallet
-      } = req.body || {};
-
+      const { wallet } = req.body;
 
       if (!wallet) {
-
         return res.status(400).json({
-
-          success:false,
-
-          message:
-            "Wallet address required",
-
+          success: false,
+          error: "Wallet address required",
         });
-
       }
 
+      const report = await buildPremiumReport(wallet);
 
-
-      const report =
-        await buildPremiumReport(wallet);
-
-
-
-      return res.json({
-
-        success:true,
-
-        premium:true,
-
-        wallet,
-
-        generatedAt:
-          new Date().toISOString(),
-
-        ...report,
-
+      res.json({
+        success: true,
+        premium: true,
+        report,
       });
 
+    } catch (err) {
+      console.error(err);
 
-
-    } catch(error) {
-
-
-      console.error(
-        "❌ PREMIUM ERROR:",
-        error
-      );
-
-
-      return res.status(500).json({
-
-        success:false,
-
-        error:
-          error.message,
-
+      res.status(500).json({
+        success: false,
+        error: err.message,
       });
-
-
     }
-
   }
-
 );
-
-
 
 export default router;
