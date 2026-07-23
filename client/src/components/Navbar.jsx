@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getAuth, signOut } from "firebase/auth";
 
@@ -6,11 +6,33 @@ import WalletButton from "../wallet/components/WalletButton";
 import PremiumButton from "./premium/PremiumButton";
 import PremiumModal from "./premium/PremiumModal";
 
+import {
+  registerVisit,
+  getVisitors,
+} from "../services/visitorService";
+
 function Navbar() {
   const navigate = useNavigate();
   const auth = getAuth();
 
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const [visitors, setVisitors] = useState(0);
+
+  useEffect(() => {
+    async function loadVisitors() {
+      try {
+        await registerVisit();
+
+        const total = await getVisitors();
+
+        setVisitors(total);
+      } catch (err) {
+        console.error("Visitor error:", err);
+      }
+    }
+
+    loadVisitors();
+  }, []);
 
   const openPremium = () => {
     setPremiumOpen(true);
@@ -38,8 +60,7 @@ function Navbar() {
             to="/"
             className="text-2xl font-bold text-white"
           >
-            Token
-            <span className="text-cyan-400">OS</span>
+            Token<span className="text-cyan-400">OS</span>
           </Link>
 
           {/* Menü */}
@@ -75,6 +96,10 @@ function Navbar() {
 
           {/* Sağ Menü */}
           <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white">
+              👥 {visitors}
+            </div>
+
             <PremiumButton onClick={openPremium} />
 
             <WalletButton />
