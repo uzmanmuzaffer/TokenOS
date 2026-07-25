@@ -1,0 +1,26 @@
+{
+  "name": "blockchain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ignition": "^3.1.8",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "@nomicfoundation/hardhat-verify": "^3.0.21",
+    "@types/node": "^22.20.1",
+    "dotenv": "^17.4.2",
+    "hardhat": "^3.11.1",
+    "typescript": "~6.0.3"
+  },
+  "dependencies": {
+    "@nomicfoundation/hardhat-viem": "^3.0.9",
+    "@openzeppelin/contracts": "^5.6.1"
+  }
+}
