@@ -63,37 +63,6 @@ function Navbar() {
             Token<span className="text-cyan-400">OS</span>
           </Link>
 
-          {/* Menü */}
-          <div className="hidden items-center gap-8 text-slate-300 md:flex">
-            <Link
-              to="/dashboard"
-              className="transition hover:text-white"
-            >
-              Dashboard
-            </Link>
-
-            <Link
-              to="/markets"
-              className="transition hover:text-white"
-            >
-              Markets
-            </Link>
-
-            <Link
-              to="/wallet"
-              className="transition hover:text-white"
-            >
-              Wallet
-            </Link>
-
-            <Link
-              to="/news"
-              className="transition hover:text-white"
-            >
-              News
-            </Link>
-          </div>
-
           {/* Sağ Menü */}
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white">
