@@ -1,51 +1,104 @@
-const PAIR_ADDRESS =
-  "0xe178efb0155a80408f395d1c0df4c980c58e5d34";
+const TOKEN_ADDRESS =
+  "0xd6D3bE2330fFaaEE7e4d9b69C208f71033676d10";
 
-const CHAIN = "base";
 
 export async function getTokenMarket() {
+
   try {
+
     const response = await fetch(
-      `https://api.dexscreener.com/latest/dex/pairs/${CHAIN}/${PAIR_ADDRESS}`
+      `https://api.dexscreener.com/latest/dex/tokens/${TOKEN_ADDRESS}`
     );
 
+
     if (!response.ok) {
-      throw new Error("DexScreener API Error");
+      throw new Error("DexScreener API error");
     }
+
 
     const data = await response.json();
 
-    if (!data.pair) {
+
+    if (!data.pairs || data.pairs.length === 0) {
+
+      console.log("Pair bulunamadı");
+
       return null;
     }
 
-    const pair = data.pair;
+
+
+    // Base + en yüksek liquidity seç
+
+    const pairs = data.pairs
+      .filter(
+        p => p.chainId === "base"
+      )
+      .sort(
+        (a,b)=>
+          (b.liquidity?.usd || 0)
+          -
+          (a.liquidity?.usd || 0)
+      );
+
+
+    const pair = pairs[0];
+
+
+    if(!pair){
+      return null;
+    }
+
+
 
     return {
-      priceUsd: Number(pair.priceUsd || 0),
 
-      liquidity: Number(pair.liquidity?.usd || 0),
+      priceUsd:
+        Number(pair.priceUsd || 0),
 
-      marketCap: Number(pair.marketCap || pair.fdv || 0),
 
-      fdv: Number(pair.fdv || 0),
+      liquidity:
+        Number(pair.liquidity?.usd || 0),
 
-      volume24h: Number(pair.volume?.h24 || 0),
 
-      buys24h: Number(pair.txns?.h24?.buys || 0),
+      marketCap:
+        Number(
+          pair.marketCap ||
+          pair.fdv ||
+          0
+        ),
 
-      sells24h: Number(pair.txns?.h24?.sells || 0),
 
-      priceChange24h: Number(pair.priceChange?.h24 || 0),
+      volume24h:
+        Number(
+          pair.volume?.h24 || 0
+        ),
 
-      pairAddress: pair.pairAddress,
 
-      dex: pair.dexId,
+      dex:
+        pair.dexId,
 
-      url: pair.url,
+
+      pairAddress:
+        pair.pairAddress,
+
+
+      url:
+        pair.url
+
     };
-  } catch (err) {
-    console.error("DexScreener:", err);
+
+
+  } catch(error){
+
+    console.error(
+      "DexScreener Error:",
+      error
+    );
+
+
     return null;
+
   }
+
 }

@@ -22,9 +22,7 @@ function Navbar() {
     async function loadVisitors() {
       try {
         await registerVisit();
-
         const total = await getVisitors();
-
         setVisitors(total);
       } catch (err) {
         console.error("Visitor error:", err);
@@ -33,14 +31,6 @@ function Navbar() {
 
     loadVisitors();
   }, []);
-
-  const openPremium = () => {
-    setPremiumOpen(true);
-  };
-
-  const closePremium = () => {
-    setPremiumOpen(false);
-  };
 
   const handleLogout = async () => {
     try {
@@ -53,39 +43,72 @@ function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full border-b border-slate-800 bg-[#0B1120]">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      <nav className="sticky top-0 z-50 w-full border-b border-slate-800 bg-[#0B1120]/95 backdrop-blur-md">
+        <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-8">
+
           {/* Logo */}
           <Link
             to="/"
-            className="text-2xl font-bold text-white"
+            className="flex items-center gap-4 transition hover:opacity-90"
           >
-            Token<span className="text-cyan-400">OS</span>
+            <img
+              src="/logo.png"
+              alt="TokenOS"
+              className="h-16 w-16 rounded-2xl object-contain shadow-xl"
+            />
+
+            <div className="leading-tight">
+              <h1 className="text-3xl font-extrabold tracking-wide text-white">
+                Token<span className="text-cyan-400">OS</span>
+              </h1>
+
+              <p className="text-sm text-slate-400">
+                AI Blockchain Analytics Platform
+              </p>
+            </div>
           </Link>
 
           {/* Sağ Menü */}
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white">
-              👥 {visitors}
+          <div className="flex items-center gap-4">
+
+            {/* Visitor Counter */}
+            <div className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow">
+              👥 {visitors.toLocaleString("tr-TR")}
             </div>
 
-            <PremiumButton onClick={openPremium} />
+            {/* Premium */}
+            <PremiumButton
+              onClick={() => setPremiumOpen(true)}
+            />
 
+            {/* Wallet */}
             <WalletButton />
 
+            {/* Logout */}
             <button
               onClick={handleLogout}
-              className="rounded-lg bg-red-600 px-4 py-2 text-white transition hover:bg-red-700"
+              className="
+                rounded-xl
+                bg-red-600
+                px-5
+                py-2.5
+                font-medium
+                text-white
+                transition-all
+                hover:bg-red-700
+                hover:shadow-lg
+              "
             >
               Logout
             </button>
+
           </div>
         </div>
       </nav>
 
       <PremiumModal
         isOpen={premiumOpen}
-        onClose={closePremium}
+        onClose={() => setPremiumOpen(false)}
       />
     </>
   );
