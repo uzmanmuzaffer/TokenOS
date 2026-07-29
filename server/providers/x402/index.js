@@ -10,14 +10,13 @@ import { ExactEvmScheme } from "@x402/evm/exact/server";
 console.log("========== X402 INITIALIZING ==========");
 
 const network =
-  process.env.X402_NETWORK || "eip155:84532";
+  process.env.X402_NETWORK || "eip155:8453";
 
 const payTo =
   process.env.X402_PAY_TO;
 
 const facilitatorUrl =
-  process.env.X402_FACILITATOR ||
-  "https://x402.org/facilitator";
+  process.env.X402_FACILITATOR || "https://facilitator.x402.rs";
 
 if (!payTo) {
   throw new Error("❌ X402_PAY_TO is missing in .env");
