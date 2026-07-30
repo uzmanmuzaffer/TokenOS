@@ -1,63 +1,42 @@
 export default function WalletTokenCard({ token }) {
+  const decimals = Number(token?.decimals ?? 18);
 
+  let balance = 0;
 
-  const decimals = Number(
-    token?.decimals ?? 18
-  );
-
-
-  const rawBalance =
-    token?.balance ??
-    token?.amount ??
-    "0";
-
-
-
-  const formattedBalance = (() => {
+  if (token?.balance_formatted !== undefined) {
+    balance = Number(token.balance_formatted);
+  } else {
+    const rawBalance = token?.balance ?? token?.amount ?? "0";
 
     try {
-
-      const value =
-        Number(rawBalance) /
-        Math.pow(10, decimals);
-
-
-      return value.toLocaleString(
-        undefined,
-        {
-          maximumFractionDigits: 6,
-        }
-      );
-
-
+      balance =
+        Number(rawBalance) / Math.pow(10, decimals);
     } catch {
-
-      return "0";
-
+      balance = 0;
     }
+  }
 
-  })();
+  const formattedBalance = Number.isFinite(balance)
+    ? balance.toLocaleString(undefined, {
+        maximumFractionDigits: 6,
+      })
+    : "0";
 
-
-
-  const usdValue =
-    token?.usd_value ??
+  const usdValue = Number(
     token?.usdValue ??
-    token?.value ??
-    null;
+      token?.usd_value ??
+      token?.value ??
+      0
+  );
 
-
-
-  const price =
+  const price = Number(
     token?.price ??
-    token?.usd_price ??
-    token?.usdPrice ??
-    null;
-
-
+      token?.usd_price ??
+      token?.usdPrice ??
+      0
+  );
 
   return (
-
     <div
       className="
         bg-slate-900
@@ -72,76 +51,37 @@ export default function WalletTokenCard({ token }) {
         transition
       "
     >
-
-
       <div>
-
         <h4 className="text-white font-semibold">
-
           {token?.name || "Unknown Token"}
-
         </h4>
 
-
         <p className="text-slate-400 text-sm">
-
           {token?.symbol || "-"}
-
         </p>
-
-
       </div>
-
-
-
 
       <div className="text-right">
-
-
         <p className="text-slate-400 text-sm">
-
           Balance
-
         </p>
-
 
         <p className="text-white font-bold">
-
           {formattedBalance} {token?.symbol}
-
         </p>
 
-
-
-        {usdValue && (
-
+        {usdValue > 0 && (
           <p className="text-green-400 text-sm mt-1">
-
-            ${Number(usdValue).toFixed(2)}
-
+            ${usdValue.toFixed(2)}
           </p>
-
         )}
 
-
-
-        {price && (
-
+        {price > 0 && (
           <p className="text-slate-500 text-xs mt-1">
-
-            Price ${Number(price).toFixed(6)}
-
+            Price ${price.toFixed(6)}
           </p>
-
         )}
-
-
-
       </div>
-
-
     </div>
-
   );
-
 }
