@@ -1,5 +1,7 @@
 export function buildPortfolioSummary(results = []) {
-  const successfulChains = results.filter((chain) => chain.success);
+  const successfulChains = results.filter(
+    (chain) => chain.success
+  );
 
   const chains = [];
   const allTokens = [];
@@ -8,18 +10,26 @@ export function buildPortfolioSummary(results = []) {
   let totalValue = 0;
 
   for (const chain of successfulChains) {
-    const tokens = chain.tokens || [];
+    const chainTokens = chain.tokens || [];
 
-    totalTokens += tokens.length;
+    totalTokens += chainTokens.length;
 
     chains.push({
       chain: chain.chain,
-      tokenCount: tokens.length,
+      tokenCount: chainTokens.length,
     });
 
-    for (const token of tokens) {
-      const balance = Number(token.balance_formatted || 0);
-      const price = Number(token.usd_price || 0);
+    for (const token of chainTokens) {
+      const balance = Number(token.balance_formatted ?? 0);
+      const price = Number(token.usd_price ?? 0);
+
+      if (
+        !Number.isFinite(balance) ||
+        !Number.isFinite(price)
+      ) {
+        continue;
+      }
+
       const value = balance * price;
 
       totalValue += value;
@@ -28,32 +38,29 @@ export function buildPortfolioSummary(results = []) {
         chain: chain.chain,
         symbol: token.symbol,
         name: token.name,
-        balance,
-        price,
-        value,
+        balance: Number(balance.toFixed(8)),
+        price: Number(price.toFixed(8)),
+        value: Number(value.toFixed(2)),
         logo: token.logo,
         address: token.token_address,
       });
     }
   }
 
-  // En büyük varlık
-  let largestHolding = null;
+  const tokens = allTokens
+    .sort((a, b) => b.value - a.value)
+    .map((token) => ({
+      ...token,
+      allocation:
+        totalValue > 0
+          ? Number(
+              ((token.value / totalValue) * 100).toFixed(2)
+            )
+          : 0,
+    }));
 
-  if (allTokens.length > 0) {
-    largestHolding = allTokens.reduce((largest, token) =>
-      token.value > (largest?.value || 0) ? token : largest,
-    null);
-  }
-
-  // Allocation hesapla
-  const tokens = allTokens.map((token) => ({
-    ...token,
-    allocation:
-      totalValue > 0
-        ? Number(((token.value / totalValue) * 100).toFixed(2))
-        : 0,
-  }));
+  const largestHolding =
+    tokens.length > 0 ? tokens[0] : null;
 
   return {
     totalChains: successfulChains.length,
