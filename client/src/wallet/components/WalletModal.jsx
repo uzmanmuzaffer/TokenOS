@@ -21,119 +21,60 @@ function WalletModal({ isOpen, onClose }) {
 
   return (
     <div
-      className="
-        fixed inset-0 z-[9999]
-        flex items-center justify-center
-        bg-black/70
-        backdrop-blur-sm
-        p-4
-      "
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="
-          w-full
-          max-w-md
-          max-h-[90vh]
-          overflow-y-auto
-          rounded-2xl
-          bg-slate-900
-          border
-          border-slate-700
-          shadow-2xl
-          p-6
-        "
+        className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden"
       >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">
+        <div className="flex items-center justify-between border-b border-slate-700 px-6 py-5">
+          <h2 className="text-xl font-bold text-white">
             Connect Wallet
           </h2>
 
           <button
             onClick={onClose}
-            className="
-              text-slate-400
-              hover:text-white
-              text-xl
-            "
+            className="text-slate-400 hover:text-white text-xl"
           >
             ✕
           </button>
         </div>
 
-        <div className="space-y-3">
-          {connectors.length > 0 ? (
-            connectors.map((connector) => (
-              <button
-                key={connector.uid}
-                disabled={isPending}
-                onClick={() => handleConnect(connector)}
-                className="
-                  w-full
-                  flex
-                  items-center
-                  justify-between
-                  rounded-xl
-                  bg-slate-800
-                  hover:bg-slate-700
-                  border
-                  border-slate-700
-                  px-4
-                  py-4
-                  transition
-                  disabled:opacity-50
-                  disabled:cursor-not-allowed
-                "
-              >
-                <span className="font-medium text-white">
-                  {connector.name}
-                </span>
+        <div className="max-h-[60vh] overflow-y-auto p-6 space-y-3">
+          {connectors.map((connector) => (
+            <button
+              key={connector.uid}
+              disabled={isPending}
+              onClick={() => handleConnect(connector)}
+              className="w-full flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800 px-4 py-4 text-white hover:bg-slate-700 transition"
+            >
+              <span>{connector.name}</span>
+              <span>→</span>
+            </button>
+          ))}
 
-                <span className="text-cyan-400">
-                  →
-                </span>
-              </button>
-            ))
-          ) : (
-            <div className="text-center text-slate-400 py-6">
-              No wallet connectors found.
-            </div>
+          {isPending && (
+            <p className="text-cyan-400 text-sm">
+              Connecting...
+            </p>
+          )}
+
+          {error && (
+            <p className="text-red-400 text-sm break-all">
+              {error.message}
+            </p>
           )}
         </div>
 
-        {isPending && (
-          <div className="mt-5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 p-3">
-            <p className="text-cyan-300 text-sm">
-              Connecting wallet...
-            </p>
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-5 rounded-lg bg-red-500/10 border border-red-500/30 p-3">
-            <p className="text-red-400 text-sm break-words">
-              {error.message}
-            </p>
-          </div>
-        )}
-
-        <button
-          onClick={onClose}
-          className="
-            mt-6
-            w-full
-            rounded-xl
-            border
-            border-slate-600
-            py-3
-            text-white
-            hover:bg-slate-800
-            transition
-          "
-        >
-          Cancel
-        </button>
+        <div className="border-t border-slate-700 p-5">
+          <button
+            onClick={onClose}
+            className="w-full rounded-xl border border-slate-600 py-3 text-white hover:bg-slate-800"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
