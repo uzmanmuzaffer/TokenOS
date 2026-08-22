@@ -1,4 +1,3 @@
-
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -26,6 +25,10 @@ import {
 import {
   getMarketTokens
 } from "./services/market.js";
+
+import {
+  getBaseRadarTokens
+} from "./services/radarService.js";
 
 dotenv.config({
   path: "./.env",
@@ -125,6 +128,31 @@ app.get("/api/tokens", async (req, res) => {
 });
 
 // ===============================
+// BASE RADAR
+// ===============================
+
+app.get("/api/radar", async (req, res) => {
+  try {
+    const tokens = await getBaseRadarTokens();
+
+    res.json({
+      success: true,
+      count: tokens.length,
+      chain: "base",
+      tokens,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Radar API Error:", error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ===============================
 // WALLET ANALYZER V1
 // ===============================
 
@@ -215,4 +243,3 @@ app.listen(PORT, () => {
     `🚀 TokenOS Backend running on http://localhost:${PORT}`
   );
 });
-
