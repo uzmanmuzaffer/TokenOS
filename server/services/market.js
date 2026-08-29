@@ -1,3 +1,4 @@
+
 import axios from "axios";
 
 const SEARCH_TERMS = [
@@ -9,27 +10,66 @@ const SEARCH_TERMS = [
   "pepe",
   "dogecoin",
   "chainlink",
-  "arbitrum",
-  "optimism"
+  "aerodrome",
+  "base",
+  "meme",
+  "degen",
+  "virtual",
+  "higher",
+  "brett"
 ];
 
+const DEXSCREENER_URL =
+  "https://api.dexscreener.com/latest/dex/search";
+
+const MIN_VOLUME = 50000;
+const MIN_LIQUIDITY = 50000;
+const MAX_TOKENS = 10;
+
+/*
+ * Sentetik hisse / tokenları Market listesinden çıkar.
+ */
+const BLOCKED_SYMBOLS = new Set([
+  "NVDAc",
+  "AAPLc",
+  "GOOGLc",
+  "METAc",
+  "AMZNc",
+  "TSLAc",
+  "MSFTc",
+  "COINc",
+  "MSTRc",
+  "NFLXc",
+  "SPYc",
+  "QQQc",
+  "SOL"
+]);
+
+const BLOCKED_NAME_PATTERNS = [
+  "NVIDIA Corporation",
+  "Apple Inc.",
+  "Alphabet Inc.",
+  "Meta Platforms Inc.",
+  "Amazon.com",
+  "Microsoft Corporation",
+  "Tesla Inc.",
+  "Coinbase",
+  "MicroStrategy"
+];
 
 export async function getMarketTokens() {
-
   try {
-
-    console.log("📡 Token market verileri alınıyor...");
-
+    console.log("📡 Base crypto market verileri alınıyor...");
 
     let allPairs = [];
 
-
+    /*
+     * DexScreener aramaları
+     */
     for (const term of SEARCH_TERMS) {
-
       try {
-
         const { data } = await axios.get(
-          "https://api.dexscreener.com/latest/dex/search",
+          DEXSCREENER_URL,
           {
             params: {
               q: term
@@ -38,131 +78,178 @@ export async function getMarketTokens() {
           }
         );
 
-
-        if (data.pairs) {
-
-          allPairs.push(
-            ...data.pairs
-          );
-
+        if (Array.isArray(data?.pairs)) {
+          allPairs.push(...data.pairs);
         }
-
-
       } catch (err) {
-
         console.log(
-          "Search error:",
-          term
+          `⚠️ DexScreener search error: ${term}`
         );
-
       }
-
     }
 
+    /*
+     * Sadece Base pair'leri
+     */
+    const basePairs = allPairs.filter(
+      (pair) =>
+        pair?.chainId === "base"
+    );
+
+    /*
+     * Hacme göre sırala
+     */
+    const sortedPairs = basePairs.sort(
+      (a, b) =>
+        Number(b.volume?.h24 || 0) -
+        Number(a.volume?.h24 || 0)
+    );
 
     const tokens = [];
-
-    const usedSymbols = new Set();
-
-
-    const sortedPairs =
-      allPairs.sort(
-        (a,b)=>
-          (b.volume?.h24 || 0) -
-          (a.volume?.h24 || 0)
-      );
-
+    const usedAddresses = new Set();
 
     for (const pair of sortedPairs) {
+      const token = pair?.baseToken;
 
-
-      const volume =
-        pair.volume?.h24 || 0;
-
-
-      const liquidity =
-        pair.liquidity?.usd || 0;
-
+      if (
+        !token?.address ||
+        !token?.symbol
+      ) {
+        continue;
+      }
 
       const symbol =
-        pair.baseToken?.symbol;
+        String(token.symbol).trim();
 
+      const name =
+        String(
+          token.name || symbol
+        ).trim();
 
+      /*
+       * Blocklist kontrolü
+       */
       if (
-        !symbol ||
-        usedSymbols.has(symbol)
+        BLOCKED_SYMBOLS.has(symbol)
       ) {
         continue;
       }
 
+      /*
+       * İsim üzerinden sentetik varlık kontrolü
+       */
+      const isBlockedName =
+        BLOCKED_NAME_PATTERNS.some(
+          (pattern) =>
+            name
+              .toLowerCase()
+              .includes(
+                pattern.toLowerCase()
+              )
+        );
 
+      if (isBlockedName) {
+        continue;
+      }
+
+      const volume =
+        Number(
+          pair.volume?.h24 || 0
+        );
+
+      const liquidity =
+        Number(
+          pair.liquidity?.usd || 0
+        );
+
+      const priceUsd =
+        Number(
+          pair.priceUsd || 0
+        );
+
+      const change24h =
+        Number(
+          pair.priceChange?.h24 || 0
+        );
+
+      /*
+       * Minimum piyasa kalitesi
+       */
       if (
-        volume < 50000 ||
-        liquidity < 50000
+        volume < MIN_VOLUME ||
+        liquidity < MIN_LIQUIDITY
       ) {
         continue;
       }
 
+      /*
+       * Aynı token farklı pair'lerde
+       * tekrar etmesin.
+       */
+      const address =
+        token.address.toLowerCase();
 
-      usedSymbols.add(symbol);
+      if (
+        usedAddresses.has(address)
+      ) {
+        continue;
+      }
 
+      usedAddresses.add(address);
 
       tokens.push({
-
-        name:
-          pair.baseToken.name,
+        name,
 
         symbol,
 
+        address:
+          token.address,
+
         price:
-          `$${Number(
-            pair.priceUsd || 0
-          ).toFixed(6)}`,
+          `$${priceUsd.toFixed(6)}`,
 
         change:
-          `${Number(
-            pair.priceChange?.h24 || 0
-          ).toFixed(2)}%`,
-
+          `${change24h.toFixed(2)}%`,
 
         volume,
 
         liquidity,
 
-        chain:
-          pair.chainId,
+        chain: "base",
 
         dex:
-          pair.dexId
+          pair.dexId ||
+          "unknown",
 
+        pairAddress:
+          pair.pairAddress ||
+          null,
+
+        url:
+          pair.url ||
+          null
       });
 
-
-      if(tokens.length >= 10)
+      if (
+        tokens.length >= MAX_TOKENS
+      ) {
         break;
-
+      }
     }
 
-
     console.log(
-      `✅ ${tokens.length} token bulundu`
+      `✅ Base Crypto Market: ${tokens.length} token bulundu`
     );
-
 
     return tokens;
 
-
-  } catch(error) {
-
-
+  } catch (error) {
     console.error(
       "❌ Market Error:",
       error.message
     );
 
-
     return [];
-
   }
-
 }
+
