@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
@@ -6,17 +7,24 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-export default function App() {
+function App() {
   return (
     <BrowserRouter>
-
       <Routes>
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
-        <Route path="/login" element={<Login />} />
-
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/register"
+          element={<Register />}
+        />
 
         <Route
           path="/dashboard"
@@ -26,9 +34,10 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
       </Routes>
-
     </BrowserRouter>
   );
 }
+
+export default App;
+

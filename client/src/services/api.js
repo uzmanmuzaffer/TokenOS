@@ -118,3 +118,30 @@ export async function getNews() {
   }
 
 }
+// ==========================
+// Airdrop Radar API
+// ==========================
+export async function getAirdropOpportunities() {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/airdrops`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(
+      "Airdrop Radar API Error:",
+      error
+    );
+
+    return {
+      success: false,
+      error: error.message,
+      airdrops: [],
+    };
+  }
+}

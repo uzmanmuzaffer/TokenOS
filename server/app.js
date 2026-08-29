@@ -5,6 +5,12 @@ import dotenv from "dotenv";
 import premiumRoutes from "./routes/premium.js";
 import newsRoutes from "./routes/news.js";
 import paymentRoutes from "./routes/payment.js";
+import airdropRoutes from "./routes/airdropRoutes.js";
+import {
+  scanAirdropSources,
+  scanWalletAirdropSources,
+  getLastAirdropScan,
+} from "./airdrop/airdropScanner.js";
 
 import {
   analyzeWallet as analyzeWalletEngine
@@ -86,6 +92,10 @@ app.use(express.json());
 app.use("/api/news", newsRoutes);
 
 app.use("/api/payment", paymentRoutes);
+app.use(
+  "/api/airdrop",
+  airdropRoutes
+);
 
 // Premium route
 // x402 koruması premium.js içinde uygulanıyor.
@@ -151,6 +161,78 @@ app.get("/api/radar", async (req, res) => {
     });
   }
 });
+// ===============================
+// AIRDROP DISCOVERY
+// ===============================
+
+app.get("/api/airdrops", async (req, res) => {
+  try {
+    const result =
+      await scanAirdropSources();
+
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error(
+      "Airdrop Discovery Error:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ===============================
+// WALLET AIRDROP SOURCES
+// ===============================
+
+app.get(
+  "/api/airdrops/wallet/:wallet",
+  async (req, res) => {
+    try {
+      const {
+        wallet,
+      } = req.params;
+
+      const result =
+        await scanWalletAirdropSources(
+          wallet
+        );
+
+      res.json(result);
+    } catch (error) {
+      console.error(
+        "Wallet Airdrop Error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+);
+
+// ===============================
+// AIRDROP SCANNER STATUS
+// ===============================
+
+app.get(
+  "/api/airdrops/status",
+  (req, res) => {
+    res.json({
+      success: true,
+      lastScan:
+        getLastAirdropScan(),
+    });
+  }
+);
 
 // ===============================
 // WALLET ANALYZER V1
