@@ -145,3 +145,65 @@ export async function getAirdropOpportunities() {
     };
   }
 }
+
+// ==========================
+// Airdrop Wallet Scan API
+// ==========================
+export async function scanWalletAirdrops(wallet, walletData = null) {
+  try {
+    if (!wallet) {
+      throw new Error("Wallet address is required.");
+    }
+
+    const response = await fetch(
+      `${BASE_URL}/api/airdrops/scan`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          wallet,
+
+          transactionCount: Number(
+            walletData?.transactionCount ??
+              walletData?.portfolio?.transactionCount ??
+              0
+          ),
+
+          protocolCount: Number(
+            walletData?.protocolCount ??
+              walletData?.portfolio?.protocolCount ??
+              0
+          ),
+
+          chains: Array.isArray(walletData?.chains)
+            ? walletData.chains
+            : [],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+
+      throw new Error(
+        text || `Airdrop API HTTP ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Airdrop Scan API Error:", error);
+
+    return {
+      success: false,
+      error:
+        error?.message ||
+        "Airdrop scan failed.",
+      results: [],
+      summary: {},
+    };
+  }
+}
+
