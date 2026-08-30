@@ -39,7 +39,7 @@ import {
 } from "./services/radarService.js";
 
 dotenv.config({
-  path: "./.env",
+  path: "C:/Users/MUZAFFER/Desktop/TokenOS/server/.env",
 });
 
 // ========================================

@@ -9,9 +9,11 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "@x402/core": "^2.18.0",
-    "@x402/evm": "^2.18.0",
-    "@x402/express": "^2.18.0",
+    "@coinbase/cdp-sdk": "^1.55.0",
+    "@x402/core": "^2.24.0",
+    "@x402/evm": "^2.24.0",
+    "@x402/express": "^2.24.0",
+    "@x402/svm": "^2.24.0",
     "axios": "^1.18.1",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
