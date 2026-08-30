@@ -1,4 +1,4 @@
-```javascript
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -151,6 +151,8 @@ app.get("/api/tokens", async (req, res) => {
 
 app.get("/api/radar", async (req, res) => {
   try {
+    console.log("📡 Base Radar scanning...");
+
     const tokens = await getBaseRadarTokens();
 
     res.json({
@@ -166,6 +168,7 @@ app.get("/api/radar", async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message,
+      tokens: [],
     });
   }
 });
@@ -391,21 +394,11 @@ app.listen(PORT, () => {
   console.log("====================================");
   console.log("🚀 TokenOS Backend");
   console.log("====================================");
-  console.log(
-    `📡 http://localhost:${PORT}`
-  );
-  console.log(
-    `📊 Tokens: http://localhost:${PORT}/api/tokens`
-  );
-  console.log(
-    `📡 Radar: http://localhost:${PORT}/api/radar`
-  );
-  console.log(
-    `🎁 Airdrops: http://localhost:${PORT}/api/airdrops`
-  );
-  console.log(
-    `🎁 Airdrop Engine: http://localhost:${PORT}/api/airdrop`
-  );
+  console.log(`📡 http://localhost:${PORT}`);
+  console.log(`📊 Tokens: http://localhost:${PORT}/api/tokens`);
+  console.log(`📡 Radar: http://localhost:${PORT}/api/radar`);
+  console.log(`🎁 Airdrops: http://localhost:${PORT}/api/airdrops`);
+  console.log(`🎁 Airdrop Engine: http://localhost:${PORT}/api/airdrop`);
   console.log("====================================");
 });
-```
+
