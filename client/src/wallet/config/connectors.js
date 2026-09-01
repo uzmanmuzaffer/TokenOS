@@ -20,9 +20,9 @@ export const connectors = [
   }),
 
   walletConnect({
-    projectId: projectId || "missing-project-id",
-    showQrModal: true,
-  }),
+  projectId: projectId || "missing-project-id",
+  showQrModal: false,
+}),
 
   coinbaseWallet({
     appName: APP_NAME,
