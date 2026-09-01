@@ -1,268 +1,549 @@
-
 import axios from "axios";
-
-/**
- * TokenOS - Token Market Data
- *
- * Fiyat kaynağı:
- * DexScreener
- *
- * Amaç:
- * - Sadece doğru chain üzerindeki pair'leri kullanmak
- * - Likiditesi olmayan pair'leri elemek
- * - En güvenilir market pair'i seçmek
- * - Fiyat + likidite + hacim + FDV + market cap bilgilerini birlikte döndürmek
- */
 
 const DEXSCREENER_BASE =
   "https://api.dexscreener.com/latest/dex/tokens";
 
-const REQUEST_TIMEOUT = 8000;
+const REQUEST_TIMEOUT = 10000;
 
-/**
- * Sayıyı güvenli şekilde Number'a çevirir.
- */
-function toNumber(value) {
+const TOS_CONTRACT =
+  "0xd6D3bE2330fFaaEE7e4d9b69C208f71033676d10".toLowerCase();
+
+const TOS_TOTAL_SUPPLY =
+  1_000_000_000;
+
+const CHAIN_MAP = {
+  eth: "ethereum",
+  ethereum: "ethereum",
+
+  base: "base",
+
+  polygon: "polygon",
+
+  bsc: "bsc",
+  "bnb chain": "bsc",
+  binance: "bsc",
+
+  arbitrum: "arbitrum",
+
+  optimism: "optimism",
+};
+
+const CACHE_TTL = 30 * 1000;
+
+const cache = new Map();
+
+function num(value, fallback = 0) {
   const n = Number(value);
 
-  return Number.isFinite(n) ? n : 0;
+  return Number.isFinite(n)
+    ? n
+    : fallback;
 }
 
-/**
- * Pair'in kullanılabilir olup olmadığını kontrol eder.
- */
-function isValidPair(pair, chain) {
-  if (!pair) return false;
+function normalizeChain(chain) {
+  const value =
+    String(chain || "base")
+      .trim()
+      .toLowerCase();
 
-  const pairChain =
-    String(pair.chainId || "").toLowerCase();
+  return CHAIN_MAP[value] || value;
+}
 
-  if (pairChain !== String(chain).toLowerCase()) {
+function empty(chain = "base") {
+  return {
+    priceUsd: 0,
+
+    liquidityUsd: 0,
+
+    volume24h: 0,
+
+    fdv: 0,
+
+    marketCap: 0,
+
+    dex: null,
+
+    pair: null,
+
+    pairName: null,
+
+    url: null,
+
+    source: "none",
+
+    confidence: "none",
+
+    priceChain:
+      normalizeChain(chain),
+
+    verified: false,
+
+    totalSupply:
+      TOS_TOTAL_SUPPLY,
+
+    pricePerTos: 0,
+  };
+}
+
+function validPair(pair, chainId) {
+  if (!pair) {
     return false;
   }
 
-  const price = toNumber(pair.priceUsd);
-  const liquidity = toNumber(pair.liquidity?.usd);
+  const pairChain =
+    String(
+      pair.chainId || ""
+    ).toLowerCase();
+
+  if (pairChain !== chainId) {
+    return false;
+  }
+
+  const price =
+    num(pair.priceUsd);
+
+  const liquidity =
+    num(pair.liquidity?.usd);
+
+  const volume =
+    num(pair.volume?.h24);
 
   if (price <= 0) {
     return false;
   }
 
+  /*
+   * Fiyatı tamamen sıfır / anlamsız
+   * pair'leri ele.
+   *
+   * TOS için düşük likiditeyi
+   * tamamen reddetmiyoruz.
+   *
+   * Çünkü şu anda gerçek pair'in
+   * likiditesi çok düşük.
+   */
   if (liquidity <= 0) {
     return false;
   }
 
+  /*
+   * Çok düşük likiditeli pair'lerde
+   * hacim yoksa fiyat güveni düşük olur.
+   *
+   * Ancak pair yine de gerçek fiyat
+   * olarak kullanılabilir.
+   */
   return true;
 }
 
-/**
- * Pair güven skoru.
- *
- * Amaç en yüksek likiditeyi körü körüne seçmek yerine
- * likidite + hacim + fiyat kalitesi birlikte değerlendirilsin.
- */
-function calculatePairScore(pair) {
-  const liquidity = toNumber(
-    pair?.liquidity?.usd
-  );
+function pairScore(pair) {
+  const liquidity =
+    num(pair.liquidity?.usd);
 
-  const volume24h = toNumber(
-    pair?.volume?.h24
-  );
+  const volume =
+    num(pair.volume?.h24);
 
-  const price = toNumber(
-    pair?.priceUsd
-  );
+  const buys =
+    num(pair.txns?.h24?.buys);
 
-  if (
-    liquidity <= 0 ||
-    price <= 0
-  ) {
-    return 0;
-  }
+  const sells =
+    num(pair.txns?.h24?.sells);
 
-  const liquidityScore =
-    Math.log10(liquidity + 1) * 10;
-
-  const volumeScore =
-    Math.log10(volume24h + 1) * 5;
+  const txns =
+    buys + sells;
 
   return (
-    liquidityScore +
-    volumeScore
+    Math.log10(liquidity + 1) * 25 +
+    Math.log10(volume + 1) * 15 +
+    Math.log10(txns + 1) * 5
   );
 }
 
-/**
- * Market data getirir.
- */
+function getConfidence(
+  liquidity,
+  volume
+) {
+  if (
+    liquidity >= 100000 &&
+    volume >= 10000
+  ) {
+    return "high";
+  }
+
+  if (
+    liquidity >= 10000 &&
+    volume >= 1000
+  ) {
+    return "medium";
+  }
+
+  if (liquidity >= 1000) {
+    return "low";
+  }
+
+  /*
+   * Pair gerçek olsa bile
+   * çok düşük likidite nedeniyle
+   * güven seviyesi none.
+   */
+  return "very-low";
+}
+
+function getCacheKey(
+  address,
+  chainId
+) {
+  return `${chainId}:${address}`;
+}
+
 export async function getTokenMarketData(
   tokenAddress,
   chain = "base"
 ) {
-  const emptyResult = {
-    priceUsd: 0,
-    liquidityUsd: 0,
-    volume24h: 0,
-    fdv: 0,
-    marketCap: 0,
-    dex: null,
-    pair: null,
-    source: "dexscreener",
-    confidence: "none",
-    priceChain: chain,
-  };
-
   if (!tokenAddress) {
-    return emptyResult;
+    return empty(chain);
+  }
+
+  const chainId =
+    normalizeChain(chain);
+
+  const supportedChains =
+    Object.values(CHAIN_MAP);
+
+  if (
+    !supportedChains.includes(
+      chainId
+    )
+  ) {
+    console.warn(
+      `⚠️ Unsupported market chain: ${chain}`
+    );
+
+    return empty(chain);
+  }
+
+  const address =
+    String(tokenAddress)
+      .trim()
+      .toLowerCase();
+
+  const cacheKey =
+    getCacheKey(
+      address,
+      chainId
+    );
+
+  const cached =
+    cache.get(cacheKey);
+
+  if (
+    cached &&
+    Date.now() -
+      cached.timestamp <
+      CACHE_TTL
+  ) {
+    return cached.data;
   }
 
   try {
-    const { data } = await axios.get(
-      `${DEXSCREENER_BASE}/${tokenAddress}`,
-      {
-        timeout: REQUEST_TIMEOUT,
-        headers: {
-          accept: "application/json",
-        },
-      }
+    console.log(
+      `📊 DexScreener fiyatı alınıyor: ${address}`
     );
 
-    const pairs = Array.isArray(data?.pairs)
-      ? data.pairs
-      : [];
+    const response =
+      await axios.get(
+        `${DEXSCREENER_BASE}/${address}`,
+        {
+          timeout:
+            REQUEST_TIMEOUT,
 
-    if (!pairs.length) {
-      return emptyResult;
-    }
+          headers: {
+            accept:
+              "application/json",
 
-    /**
-     * Sadece istenen chain.
+            "User-Agent":
+              "TokenOS/2.0",
+          },
+        }
+      );
+
+    const pairs =
+      Array.isArray(
+        response?.data?.pairs
+      )
+        ? response.data.pairs
+        : [];
+
+    /*
+     * Sadece Base pair'leri.
      */
-    const chainPairs = pairs.filter(
-      (pair) =>
-        String(pair.chainId || "").toLowerCase() ===
-        String(chain).toLowerCase()
-    );
+    const basePairs =
+      pairs.filter(
+        (pair) =>
+          String(
+            pair?.chainId || ""
+          ).toLowerCase() ===
+          chainId
+      );
 
-    /**
-     * Sadece gerçek fiyat + likidite sahibi pair'ler.
+    /*
+     * TokenOS'u gerçekten içeren
+     * pair'leri seç.
      */
-    const validPairs = chainPairs.filter(
-      (pair) =>
-        isValidPair(pair, chain)
-    );
+    const tosPairs =
+      basePairs.filter(
+        (pair) => {
+          const base =
+            String(
+              pair?.baseToken
+                ?.address || ""
+            ).toLowerCase();
 
-    if (!validPairs.length) {
-      return emptyResult;
-    }
+          const quote =
+            String(
+              pair?.quoteToken
+                ?.address || ""
+            ).toLowerCase();
 
-    /**
-     * Pair'leri güven skoruna göre sırala.
-     */
-    const sortedPairs = [...validPairs].sort(
-      (a, b) =>
-        calculatePairScore(b) -
-        calculatePairScore(a)
-    );
+          return (
+            base === address ||
+            quote === address
+          );
+        }
+      );
 
-    const bestPair = sortedPairs[0];
-
-    const priceUsd =
-      toNumber(bestPair.priceUsd);
-
-    const liquidityUsd =
-      toNumber(bestPair.liquidity?.usd);
-
-    const volume24h =
-      toNumber(bestPair.volume?.h24);
-
-    const fdv =
-      toNumber(bestPair.fdv);
-
-    const marketCap =
-      toNumber(bestPair.marketCap);
-
-    /**
-     * Confidence hesapla.
-     */
-    let confidence = "very-low";
+    const validPairs =
+      tosPairs
+        .filter(
+          (pair) =>
+            validPair(
+              pair,
+              chainId
+            )
+        )
+        .sort(
+          (a, b) =>
+            pairScore(b) -
+            pairScore(a)
+        );
 
     if (
-      liquidityUsd >= 100000 &&
-      volume24h >= 10000
+      validPairs.length === 0
     ) {
-      confidence = "high";
-    } else if (
-      liquidityUsd >= 25000 &&
-      volume24h >= 1000
-    ) {
-      confidence = "medium";
-    } else if (
-      liquidityUsd >= 5000
-    ) {
-      confidence = "low";
+      const result =
+        empty(chainId);
+
+      cache.set(
+        cacheKey,
+        {
+          timestamp:
+            Date.now(),
+
+          data:
+            result,
+        }
+      );
+
+      return result;
     }
 
-    /**
-     * Eğer market cap yoksa FDV fallback olarak kullanılabilir.
-     * Ancak bunu gerçek market cap diye göstermiyoruz.
+    /*
+     * TokenOS için en iyi
+     * gerçek pair.
      */
-    const finalMarketCap =
-      marketCap > 0
-        ? marketCap
-        : 0;
+    const bestPair =
+      validPairs[0];
 
-    return {
+    const priceUsd =
+      num(
+        bestPair.priceUsd
+      );
+
+    const liquidityUsd =
+      num(
+        bestPair.liquidity?.usd
+      );
+
+    const volume24h =
+      num(
+        bestPair.volume?.h24
+      );
+
+    const fdv =
+      num(
+        bestPair.fdv
+      );
+
+    /*
+     * DexScreener marketCap
+     * vermiyorsa total supply ile
+     * kendimiz hesaplıyoruz.
+     *
+     * TOS:
+     * 1,000,000,000 adet
+     */
+    const calculatedMarketCap =
+      priceUsd *
+      TOS_TOTAL_SUPPLY;
+
+    const marketCap =
+      num(
+        bestPair.marketCap,
+        calculatedMarketCap
+      ) || calculatedMarketCap;
+
+    /*
+     * Eğer FDV yoksa yine supply
+     * üzerinden hesapla.
+     */
+    const calculatedFdv =
+      priceUsd *
+      TOS_TOTAL_SUPPLY;
+
+    const finalFdv =
+      fdv > 0
+        ? fdv
+        : calculatedFdv;
+
+    const confidence =
+      getConfidence(
+        liquidityUsd,
+        volume24h
+      );
+
+    const baseSymbol =
+      bestPair
+        ?.baseToken
+        ?.symbol ||
+      "TOS";
+
+    const quoteSymbol =
+      bestPair
+        ?.quoteToken
+        ?.symbol ||
+      "USDC";
+
+    const result = {
+      /*
+       * GERÇEK 1 TOS FİYATI
+       */
       priceUsd,
+
+      pricePerTos:
+        priceUsd,
+
       liquidityUsd,
+
       volume24h,
-      fdv,
-      marketCap: finalMarketCap,
+
+      fdv:
+        finalFdv,
+
+      marketCap,
 
       dex:
         bestPair.dexId ||
-        bestPair.dex ||
         null,
 
       pair:
         bestPair.pairAddress ||
         null,
 
-      source: "dexscreener",
+      pairName:
+        `${baseSymbol}/${quoteSymbol}`,
+
+      url:
+        bestPair.url ||
+        null,
+
+      source:
+        "dexscreener",
 
       confidence,
 
       priceChain:
-        bestPair.chainId || chain,
+        chainId,
+
+      /*
+       * Pair gerçek olduğu için
+       * veri mevcut.
+       */
+      verified:
+        true,
+
+      totalSupply:
+        TOS_TOTAL_SUPPLY,
+
+      baseToken:
+        bestPair
+          ?.baseToken
+          ?.address ||
+        "",
+
+      quoteToken:
+        bestPair
+          ?.quoteToken
+          ?.address ||
+        "",
+
+      pairCreatedAt:
+        bestPair.pairCreatedAt ||
+        null,
     };
-  } catch (error) {
-    console.error(
-      "Token market data error:",
-      tokenAddress,
-      error.message
+
+    cache.set(
+      cacheKey,
+      {
+        timestamp:
+          Date.now(),
+
+        data:
+          result,
+      }
     );
 
-    return emptyResult;
+    console.log(
+      `💰 TOS PRICE: $${priceUsd}`
+    );
+
+    console.log(
+      `💧 TOS LIQUIDITY: $${liquidityUsd}`
+    );
+
+    console.log(
+      `📈 TOS FDV: $${finalFdv}`
+    );
+
+    console.log(
+      `📊 TOS MARKET CAP: $${marketCap}`
+    );
+
+    return result;
+  } catch (error) {
+    console.error(
+      `❌ Market data error [${chainId}] ${address}:`,
+      error?.message
+    );
+
+    return empty(chainId);
   }
 }
 
-/**
- * Eski kodlarla uyumluluk için.
- *
- * Bazı yerlerde sadece fiyat isteniyorsa
- * doğrudan USD fiyatı döndürür.
- */
 export async function getTokenPrice(
   tokenAddress,
   chain = "base"
 ) {
-  const marketData =
+  const data =
     await getTokenMarketData(
       tokenAddress,
       chain
     );
 
-  return marketData.priceUsd;
+  return num(
+    data?.priceUsd
+  );
 }
 
+export function clearTokenPriceCache() {
+  cache.clear();
+}

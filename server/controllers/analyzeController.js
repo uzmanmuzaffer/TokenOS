@@ -1,3 +1,4 @@
+
 // server/controllers/analyzeController.js
 
 import { analyzeWallet as analyzeWalletEngine } from "../engine/walletEngine.js";
@@ -22,13 +23,18 @@ export async function analyzeWallet(req, res) {
     const results = await analyzeWalletEngine(wallet);
 
     // 2. Portfolio özeti
-    const portfolioData = buildPortfolio(results);
+    // buildPortfolio async olduğu için await gerekli
+    const portfolioData = await buildPortfolio(results);
 
     // 3. Güvenlik analizi
-    const security = analyzeSecurity(portfolioData.portfolio);
+    const security = analyzeSecurity(
+      portfolioData.portfolio
+    );
 
     // 4. Sağlık puanı
-    const score = calculateHealthScore(security);
+    const score = calculateHealthScore(
+      security
+    );
 
     // 5. AI analizi
     const ai = await analyzePortfolioWithAI({
@@ -51,7 +57,10 @@ export async function analyzeWallet(req, res) {
     return res.json(report);
 
   } catch (error) {
-    console.error("Analyze Controller Error:", error);
+    console.error(
+      "Analyze Controller Error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -59,3 +68,4 @@ export async function analyzeWallet(req, res) {
     });
   }
 }
+

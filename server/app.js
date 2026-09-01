@@ -490,7 +490,7 @@ app.post(
       ------------------------------- */
 
       const portfolioData =
-        buildPortfolio(
+        await buildPortfolio(
           results
         );
 

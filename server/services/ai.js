@@ -1,25 +1,21 @@
-
 import dotenv from "dotenv";
 dotenv.config();
 
 import Groq from "groq-sdk";
 
-// ========================================
-// GROQ CONFIG
-// ========================================
-
 const apiKey = process.env.GROQ_API_KEY;
+
+const MODEL_CANDIDATES = [
+  process.env.GROQ_MODEL,
+  "openai/gpt-oss-20b",
+  "openai/gpt-oss-120b",
+  "llama-3.1-8b-instant",
+].filter(Boolean);
 
 let groq = null;
 
 if (!apiKey) {
-  console.warn(
-    "⚠️ GROQ_API_KEY bulunamadı. AI servisi başlatılamadı."
-  );
-
-  console.log(
-    "🟡 Groq AI disabled - GROQ_API_KEY missing"
-  );
+  console.warn("⚠️ GROQ_API_KEY missing");
 } else {
   try {
     groq = new Groq({
@@ -32,117 +28,119 @@ if (!apiKey) {
       "❌ Groq initialization failed:",
       error?.message || error
     );
-
-    groq = null;
   }
 }
 
-// ========================================
-// GENERATE AI REPORT
-// ========================================
+function getErrorMessage(error) {
+  return (
+    error?.message ||
+    error?.error?.message ||
+    "AI request failed."
+  );
+}
+
+async function callModel(model, prompt) {
+  return groq.chat.completions.create({
+    model,
+
+    messages: [
+      {
+        role: "system",
+        content: `
+You are TokenOS AI.
+
+You are a blockchain portfolio intelligence assistant.
+
+Rules:
+- Never invent wallet balances.
+- Never invent prices.
+- Never invent transactions.
+- Only analyze supplied data.
+- Do not give guaranteed financial advice.
+- Clearly distinguish facts from observations.
+- Return clean Markdown.
+        `.trim(),
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+
+    temperature: 0.2,
+    max_tokens: 1800,
+  });
+}
 
 export async function generateAIReport(prompt) {
-  if (!groq) {
-    throw new Error(
-      "Groq AI service is unavailable. Check GROQ_API_KEY."
-    );
-  }
-
   if (!prompt || typeof prompt !== "string") {
-    throw new Error(
-      "AI prompt is required."
-    );
+    throw new Error("AI prompt is required.");
   }
 
-  try {
-    console.log(
-      "🤖 TokenOS AI report generation started..."
-    );
-
-    const completion =
-      await groq.chat.completions.create({
-        model: "llama-3.3-70b-versatile",
-
-        messages: [
-          {
-            role: "system",
-
-            content:
-              "You are TokenOS AI, a professional blockchain security and portfolio analyst. Analyze wallet data carefully. Respond with clear, practical and structured Markdown. Never claim to know blockchain data that was not provided.",
-          },
-
-          {
-            role: "user",
-
-            content: prompt,
-          },
-        ],
-
-        temperature: 0.3,
-
-        max_tokens: 1500,
-      });
-
-    const report =
-      completion?.choices?.[0]?.message?.content;
-
-    if (!report) {
-      throw new Error(
-        "Groq returned an empty AI report."
-      );
-    }
-
-    console.log(
-      "✅ TokenOS AI report generated successfully."
-    );
-
-    return report;
-  } catch (error) {
-    console.error(
-      "========== GROQ ERROR =========="
-    );
-
-    console.error(
-      "Message:",
-      error?.message
-    );
-
-    console.error(
-      "Status:",
-      error?.status
-    );
-
-    console.error(
-      "Code:",
-      error?.code
-    );
-
-    console.error(
-      "Type:",
-      error?.type
-    );
-
-    if (error?.response?.data) {
-      console.error(
-        "Response:",
-        error.response.data
-      );
-    }
-
-    console.error(
-      "================================"
-    );
-
-    throw new Error(
-      error?.message ||
-      "Failed to generate AI report."
-    );
+  if (!groq) {
+    return {
+      success: false,
+      available: false,
+      model: null,
+      report:
+        "AI service is unavailable because GROQ_API_KEY is missing.",
+    };
   }
+
+  let lastError = null;
+
+  for (const model of MODEL_CANDIDATES) {
+    try {
+      console.log(
+        `🤖 TokenOS AI trying model: ${model}`
+      );
+
+      const completion =
+        await callModel(model, prompt);
+
+      const report =
+        completion?.choices?.[0]?.message?.content;
+
+      if (!report) {
+        throw new Error(
+          "Groq returned an empty response."
+        );
+      }
+
+      console.log(
+        `✅ TokenOS AI success: ${model}`
+      );
+
+      return {
+        success: true,
+        available: true,
+        model,
+        report,
+      };
+    } catch (error) {
+      lastError = error;
+
+      console.warn(
+        `⚠️ AI model failed: ${model}`,
+        getErrorMessage(error)
+      );
+    }
+  }
+
+  console.error(
+    "❌ All Groq models failed:",
+    getErrorMessage(lastError)
+  );
+
+  return {
+    success: false,
+    available: false,
+    model: null,
+    report:
+      "AI report could not be generated. Portfolio analysis is still available.",
+    error: getErrorMessage(lastError),
+  };
 }
-
-// ========================================
-// PREMIUM AI WALLET REPORT
-// ========================================
 
 export async function buildPremiumReport(wallet) {
   if (!wallet) {
@@ -152,68 +150,42 @@ export async function buildPremiumReport(wallet) {
   }
 
   const prompt = `
-You are TokenOS AI.
+Generate a TokenOS Premium Wallet Report.
 
-Generate a professional premium wallet analysis.
-
-Wallet Address:
+Wallet:
 ${wallet}
 
-Important:
-- Do not invent blockchain balances or transactions.
-- If actual wallet data is unavailable, clearly state that the analysis is based only on the supplied wallet address.
-- Do not present assumptions as confirmed facts.
-- Keep the report practical and easy to understand.
+Do not invent balances, prices, transactions,
+or blockchain activity.
 
-Include the following sections:
+If actual blockchain data is unavailable,
+say so clearly.
+
+Sections:
 
 # TokenOS Premium Wallet Report
 
-## 1. Wallet Summary
+## Wallet Summary
 
-Explain the wallet address and what can reasonably be inferred.
+## Risk Analysis
 
-## 2. Risk Score
+## Portfolio Analysis
 
-Give a 0-100 risk score only if sufficient information is available.
+## Diversification
 
-Explain the reasoning.
+## Strengths
 
-## 3. Portfolio Analysis
+## Weaknesses
 
-Discuss portfolio composition only when actual portfolio data is available.
+## Educational Action Plan
 
-## 4. Diversification Analysis
-
-Evaluate diversification based on available data.
-
-## 5. Whale Activity
-
-Discuss whale-related signals only when supported by available information.
-
-## 6. Smart Money Signals
-
-Identify potential smart-money signals only when supported by available information.
-
-## 7. Strengths
-
-List the wallet's potential strengths.
-
-## 8. Weaknesses
-
-List potential weaknesses or risks.
-
-## 9. Investment Recommendations
-
-Provide general educational observations.
+## Final Summary
 
 Do not guarantee profits.
-
-End with a short TokenOS disclaimer.
 `;
 
-  return await generateAIReport(
-    prompt
-  );
-}
+  const result =
+    await generateAIReport(prompt);
 
+  return result;
+}

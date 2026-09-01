@@ -1,32 +1,61 @@
-import { getWalletTokens } from "../../services/moralis.js";
+
+import { getWalletTokens } from "../../services/alchemy.js";
 
 /**
  * TokenOS EVM Provider
  *
- * Tüm EVM tabanlı ağlar için ortak provider.
- * Yeni EVM ağı eklemek için sadece config/chains.js dosyasına
- * yeni bir chain eklemek yeterlidir.
+ * Wallet Analyzer için Moralis yerine
+ * Alchemy Token API kullanılır.
  */
 
-export async function getEvmWallet(wallet, chain) {
+export async function getEvmWallet(
+  wallet,
+  chain
+) {
   try {
-    const tokens = await getWalletTokens(wallet, chain.id);
+    const tokens =
+      await getWalletTokens(
+        wallet,
+        chain.id
+      );
 
     return {
       success: true,
-      chain: chain.name,
-      chainId: chain.id,
-      tokenCount: tokens.length,
+
+      chain:
+        chain.name,
+
+      chainId:
+        chain.id,
+
+      tokenCount:
+        tokens.length,
+
       tokens,
     };
   } catch (error) {
+    console.error(
+      `❌ ${chain.name} wallet error:`,
+      error?.message
+    );
+
     return {
       success: false,
-      chain: chain.name,
-      chainId: chain.id,
+
+      chain:
+        chain.name,
+
+      chainId:
+        chain.id,
+
       tokenCount: 0,
+
       tokens: [],
-      error: error.message,
+
+      error:
+        error?.message ||
+        "Wallet provider error",
     };
   }
 }
+

@@ -1,11 +1,15 @@
 import { buildPortfolioSummary } from "../utils/portfolioUtils.js";
 
-export function buildPortfolio(results = []) {
-  const portfolio = buildPortfolioSummary(results);
+export async function buildPortfolio(results = []) {
+  const portfolio =
+    await buildPortfolioSummary(results);
 
   return {
     success: true,
-    generatedAt: new Date().toISOString(),
+
+    generatedAt:
+      new Date().toISOString(),
+
     portfolio,
   };
 }
