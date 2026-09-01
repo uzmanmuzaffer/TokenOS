@@ -60,7 +60,7 @@ function isChainMatch(airdrop, walletData) {
   const airdropChains =
     getAirdropChains(airdrop);
 
-  if (airdopChainsEmpty(aidropChains)) {
+  if (airdopChainsEmpty(airdropChains)) {
     return true;
   }
 
