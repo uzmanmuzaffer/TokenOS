@@ -13,16 +13,17 @@ function Navbar() {
   const auth = getAuth();
 
   const [premiumOpen, setPremiumOpen] = useState(false);
-  const [visitors, setVisitors] = useState(0);
+  const [visitors, setVisitors] = useState(null);
 
   useEffect(() => {
     async function loadVisitors() {
       try {
         await registerVisit();
         const total = await getVisitors();
-        setVisitors(total);
+        setVisitors(Number(total) || 0);
       } catch (err) {
         console.error("Visitor Error:", err);
+        setVisitors(0);
       }
     }
 
@@ -56,7 +57,7 @@ function Navbar() {
             </span>
           </Link>
 
-          <div className="hidden items-center gap-4 text-sm text-slate-400 md:flex">
+          <div className="hidden items-center gap-6 text-sm text-slate-400 md:flex">
             <Link to="/dashboard" className="hover:text-white">
               Overview
             </Link>
@@ -69,14 +70,25 @@ function Navbar() {
           </div>
 
           <div className="ml-auto flex items-center gap-2 md:gap-3">
-            <div className="hidden rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-1.5 sm:block">
-              <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                Users
+            {visitors > 0 ? (
+              <div className="hidden rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-1.5 sm:block">
+                <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                  Visitors
+                </div>
+                <div className="text-sm font-semibold text-cyan-400">
+                  {visitors.toLocaleString("en-US")}
+                </div>
               </div>
-              <div className="text-sm font-semibold text-cyan-400">
-                {Number(visitors || 0).toLocaleString("en-US")}
+            ) : (
+              <div className="hidden rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-1.5 sm:block">
+                <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                  Status
+                </div>
+                <div className="text-sm font-semibold text-cyan-400">
+                  Signed in
+                </div>
               </div>
-            </div>
+            )}
 
             <PremiumButton onClick={() => setPremiumOpen(true)} />
             <WalletButton />
