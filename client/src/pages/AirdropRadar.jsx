@@ -1,38 +1,33 @@
+import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
 
-import { useEffect, useMemo, useState } from "react";
-import { getAirdropOpportunities } from "../services/api";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
+import { scanWalletAirdrops } from "../services/api";
+import useWalletStore from "../store/walletStore";
 
 function formatUsd(value) {
-  const number = Number(value || 0);
-
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 2,
-  }).format(number);
+  }).format(Number(value || 0));
 }
 
 function StatusBadge({ status }) {
   const normalized = String(status || "potential").toLowerCase();
 
   const styles = {
-    claimable:
-      "bg-emerald-500/10 border-emerald-500/30 text-emerald-400",
-    eligible_unpriced:
-      "bg-yellow-500/10 border-yellow-500/30 text-yellow-400",
-    likely:
-      "bg-blue-500/10 border-blue-500/30 text-blue-400",
-    potential:
-      "bg-slate-500/10 border-slate-500/30 text-slate-300",
-    received:
-      "bg-purple-500/10 border-purple-500/30 text-purple-400",
-    expired:
-      "bg-red-500/10 border-red-500/30 text-red-400",
+    received: "bg-purple-500/10 border-purple-500/30 text-purple-300",
+    claimable: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400",
+    likely: "bg-blue-500/10 border-blue-500/30 text-blue-400",
+    potential: "bg-slate-500/10 border-slate-500/30 text-slate-300",
+    expired: "bg-red-500/10 border-red-500/30 text-red-400",
   };
 
   return (
     <span
-      className={`inline-flex max-w-full items-center rounded-full border px-3 py-1 text-[11px] font-bold tracking-wide ${
+      className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-bold tracking-wide ${
         styles[normalized] || styles.potential
       }`}
     >
@@ -41,371 +36,269 @@ function StatusBadge({ status }) {
   );
 }
 
+function normalizeItem(item, fallbackStatus) {
+  const status =
+    item?.status ||
+    (item?.received?.detected ? "received" : fallbackStatus);
+
+  const usd =
+    Number(
+      item?.received?.usdValue ??
+        item?.usdValue ??
+        item?.valuation?.usdValue ??
+        0
+    );
+
+  return {
+    id:
+      item?.id ||
+      item?.project ||
+      item?.token?.symbol ||
+      item?.symbol ||
+      Math.random().toString(16).slice(2),
+    project: item?.project || item?.name || item?.token?.name || "Unknown",
+    symbol: item?.token?.symbol || item?.symbol || "UNKNOWN",
+    status,
+    usd,
+    amount: item?.received?.amount ?? item?.amount ?? null,
+    eligibility:
+      item?.eligibility?.type ||
+      item?.eligibility ||
+      item?.reason ||
+      "No extra eligibility note",
+    claimUrl: item?.claim?.url || item?.url || "",
+    evidenceCount:
+      item?.received?.transfers?.length ||
+      item?.evidence?.transactionCount ||
+      0,
+  };
+}
+
 function AirdropCard({ airdrop }) {
-  const project =
-    airdrop?.project || "Unknown Project";
-
-  const symbol =
-    airdrop?.token?.symbol || "UNKNOWN";
-
-  const valuation =
-    Number(airdrop?.valuation?.usdValue || 0);
-
-  const eligibility =
-    airdrop?.eligibility?.type ||
-    "Eligibility signal unavailable";
-
-  const chains = Array.isArray(airdrop?.chains)
-    ? airdrop.chains
-    : [];
-
-  const claimUrl =
-    airdrop?.claim?.url ||
-    airdrop?.url ||
-    "";
-
-  const verified =
-    airdrop?.verified === true;
-
   return (
-    <article className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg shadow-black/10 transition duration-200 hover:border-cyan-500/40 hover:bg-slate-900">
-      {/* Header */}
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-lg font-black text-cyan-400">
-              {project.charAt(0).toUpperCase()}
-            </div>
-
-            <div className="min-w-0">
-              <h2 className="truncate text-lg font-bold text-white">
-                {project}
-              </h2>
-
-              <p className="mt-0.5 truncate text-xs text-slate-500">
-                Token: {symbol}
-              </p>
-            </div>
-          </div>
+    <article className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-bold text-white">
+            {airdrop.project}
+          </h2>
+          <p className="mt-1 text-xs text-slate-500">Token: {airdrop.symbol}</p>
         </div>
-
-        <div className="shrink-0">
-          <StatusBadge status={airdrop?.status} />
-        </div>
+        <StatusBadge status={airdrop.status} />
       </div>
 
-      {/* Metrics */}
-      <div className="mt-5 grid min-w-0 grid-cols-2 gap-3">
-        <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Potential Value
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+            Value
           </p>
-
-          <p className="mt-1 truncate text-lg font-bold text-cyan-400">
-            {formatUsd(valuation)}
+          <p className="mt-1 text-lg font-bold text-cyan-400">
+            {formatUsd(airdrop.usd)}
           </p>
         </div>
-
-        <div className="min-w-0 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Verification
+        <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+            Evidence
           </p>
-
-          <p
-            className={`mt-1 truncate text-sm font-bold ${
-              verified
-                ? "text-emerald-400"
-                : "text-slate-400"
-            }`}
-          >
-            {verified ? "VERIFIED" : "UNVERIFIED"}
+          <p className="mt-1 text-lg font-bold text-white">
+            {airdrop.evidenceCount} tx
           </p>
         </div>
       </div>
 
-      {/* Eligibility */}
-      <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-          Eligibility
-        </p>
+      <p className="mt-4 text-sm leading-6 text-slate-400">
+        {airdrop.eligibility}
+      </p>
 
-        <p className="mt-1 break-words text-sm text-slate-300">
-          {eligibility}
-        </p>
-      </div>
-
-      {/* Chains */}
-      {chains.length > 0 && (
-        <div className="mt-4">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Networks
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            {chains.map((chain, index) => (
-              <span
-                key={`${chain}-${index}`}
-                className="max-w-full rounded-lg border border-slate-700 bg-slate-800/70 px-2.5 py-1 text-xs text-slate-300"
-              >
-                {String(chain)}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="mt-5 flex min-w-0 flex-col gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <span className="truncate text-xs text-slate-500">
-          Source: DeFiLlama
-        </span>
-
-        {claimUrl ? (
-          <a
-            href={claimUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-cyan-500 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-cyan-400"
-          >
-            Open Claim ↗
-          </a>
-        ) : (
-          <span className="inline-flex shrink-0 items-center justify-center rounded-lg bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-500">
-            No Claim Link
-          </span>
-        )}
-      </div>
+      {airdrop.claimUrl ? (
+        <a
+          href={airdrop.claimUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 inline-flex rounded-lg border border-cyan-500/30 px-4 py-2 text-sm text-cyan-300 hover:bg-cyan-500/10"
+        >
+          Open claim page
+        </a>
+      ) : null}
     </article>
   );
 }
 
-function AirdropRadar() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function AirdropRadar() {
+  const storeWallet = useWalletStore((s) => s.wallet);
+  const [wallet, setWallet] = useState(storeWallet || "");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [scan, setScan] = useState(null);
 
-  async function loadAirdrops() {
+  const received = useMemo(() => {
+    const rows = Array.isArray(scan?.received?.results)
+      ? scan.received.results
+      : [];
+    return rows.map((item) => normalizeItem(item, "received"));
+  }, [scan]);
+
+  const others = useMemo(() => {
+    const rows = Array.isArray(scan?.results) ? scan.results : [];
+    return rows
+      .filter((item) => item?.status !== "received")
+      .map((item) => normalizeItem(item, "potential"));
+  }, [scan]);
+
+  const stats = {
+    received: received.length,
+    claimable: others.filter((i) => i.status === "claimable").length,
+    potential: others.filter((i) => i.status !== "claimable").length,
+    value:
+      Number(scan?.summary?.receivedUsd || 0) +
+      Number(scan?.summary?.confirmedTotalUsd || 0),
+  };
+
+  async function handleScan(e) {
+    e?.preventDefault?.();
+    const value = wallet.trim();
+    if (!value) return;
+
     setLoading(true);
     setError("");
 
     try {
-      const result =
-        await getAirdropOpportunities();
+      const result = await scanWalletAirdrops(value);
 
       if (!result?.success) {
-        throw new Error(
-          result?.error ||
-            "Airdrop Radar data could not be loaded."
-        );
+        throw new Error(result?.error || "Wallet airdrop scan failed.");
       }
 
-      setData(result);
+      setScan(result);
     } catch (err) {
-      console.error(
-        "Airdrop Radar Error:",
-        err
-      );
-
-      setError(
-        err?.message ||
-          "Airdrop Radar could not be loaded."
-      );
+      setScan(null);
+      setError(err.message || "Wallet airdrop scan failed.");
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => {
-    loadAirdrops();
-  }, []);
-
-  const opportunities =
-    Array.isArray(data?.airdrops)
-      ? data.airdrops
-      : [];
-
-  const stats = useMemo(() => {
-    const claimable =
-      opportunities.filter(
-        (item) =>
-          item?.status === "claimable" ||
-          item?.claim?.isLive === true
-      ).length;
-
-    const potential =
-      opportunities.filter(
-        (item) =>
-          item?.status === "potential" ||
-          item?.status === "likely" ||
-          item?.status === "eligible_unpriced"
-      ).length;
-
-    const verified =
-      opportunities.filter(
-        (item) =>
-          item?.verified === true
-      ).length;
-
-    const potentialValue =
-      opportunities.reduce(
-        (sum, item) =>
-          sum +
-          Number(
-            item?.valuation?.usdValue || 0
-          ),
-        0
-      );
-
-    return {
-      total: opportunities.length,
-      claimable,
-      potential,
-      verified,
-      potentialValue,
-    };
-  }, [opportunities]);
-
   return (
-    <section className="w-full min-w-0 overflow-x-hidden">
-      <div className="w-full min-w-0">
-        {/* Header */}
-        <header className="mb-6 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex min-w-0 flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Airdrop Radar
-              </h1>
+    <div className="min-h-screen bg-[#070b14] text-white lg:flex">
+      <Sidebar />
 
-              <span className="inline-flex shrink-0 items-center rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-bold tracking-wider text-cyan-400">
-                LIVE DISCOVERY
-              </span>
-            </div>
+      <div className="min-w-0 flex-1">
+        <Navbar />
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-              Discover airdrop opportunities,
-              eligibility signals and claim
-              information.
+        <main className="p-4 md:p-6 lg:p-8">
+          <header className="mb-6">
+            <p className="text-xs uppercase tracking-[0.2em] text-cyan-400">
+              Wallet scan
             </p>
-          </div>
+            <h1 className="mt-1 text-2xl font-semibold">Airdrop Radar</h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-400">
+              Paste any EVM wallet to see tokens already received and known
+              eligibility signals. This cannot predict unpublished airdrops.
+            </p>
+          </header>
 
-          <button
-            type="button"
-            onClick={loadAirdrops}
-            disabled={loading}
-            className="inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-cyan-500 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          <form
+            onSubmit={handleScan}
+            className="mb-6 flex w-full max-w-3xl flex-col gap-3 sm:flex-row"
           >
-            {loading
-              ? "Scanning..."
-              : "Refresh Radar"}
-          </button>
-        </header>
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <input
+                value={wallet}
+                onChange={(e) => setWallet(e.target.value)}
+                placeholder="Paste wallet address (0x...)"
+                className="w-full rounded-xl border border-slate-700 bg-slate-900 py-3 pl-10 pr-3 text-sm outline-none focus:border-cyan-500"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !wallet.trim()}
+              className="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-400 disabled:opacity-50"
+            >
+              {loading ? "Scanning..." : "Scan wallet"}
+            </button>
+          </form>
 
-        {/* Error */}
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+              {error}
+            </div>
+          )}
 
-        {/* Stats */}
-        <div className="mb-6 grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-4 sm:p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Opportunities
-            </p>
-
-            <p className="mt-2 text-2xl font-bold text-white sm:text-3xl">
-              {stats.total}
-            </p>
-          </div>
-
-          <div className="min-w-0 overflow-hidden rounded-2xl border border-emerald-500/20 bg-slate-900 p-4 sm:p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Claimable
-            </p>
-
-            <p className="mt-2 text-2xl font-bold text-emerald-400 sm:text-3xl">
-              {stats.claimable}
-            </p>
+          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Stat label="Received" value={stats.received} />
+            <Stat label="Claimable" value={stats.claimable} />
+            <Stat label="Potential" value={stats.potential} />
+            <Stat label="Est. value" value={formatUsd(stats.value)} accent />
           </div>
 
-          <div className="min-w-0 overflow-hidden rounded-2xl border border-blue-500/20 bg-slate-900 p-4 sm:p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Potential
-            </p>
+          {loading && (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center text-sm text-slate-400">
+              Scanning this wallet against known airdrop sources...
+            </div>
+          )}
 
-            <p className="mt-2 text-2xl font-bold text-blue-400 sm:text-3xl">
-              {stats.potential}
-            </p>
-          </div>
-
-          <div className="min-w-0 overflow-hidden rounded-2xl border border-cyan-500/20 bg-slate-900 p-4 sm:p-5">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Potential Value
-            </p>
-
-            <p className="mt-2 truncate text-xl font-bold text-cyan-400 sm:text-2xl">
-              {formatUsd(stats.potentialValue)}
-            </p>
-          </div>
-        </div>
-
-        {/* Loading */}
-        {loading && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
-            <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-cyan-400" />
-
-            <p className="text-sm font-semibold text-cyan-400">
-              Scanning Airdrop Radar...
-            </p>
-
-            <p className="mt-2 text-xs text-slate-500">
-              Discovering the latest opportunities.
-            </p>
-          </div>
-        )}
-
-        {/* Empty */}
-        {!loading &&
-          opportunities.length === 0 &&
-          !error && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
-              <p className="text-sm text-slate-300">
-                No airdrop opportunities
-                discovered yet.
+          {!loading && !scan && !error && (
+            <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 p-10 text-center">
+              <p className="text-lg font-medium">No wallet scanned yet</p>
+              <p className="mt-2 text-sm text-slate-400">
+                Paste an address to list received airdrops and eligibility hits.
               </p>
-
-              <button
-                type="button"
-                onClick={loadAirdrops}
-                className="mt-4 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-700"
-              >
-                Scan Again
-              </button>
             </div>
           )}
 
-        {/* Cards */}
-        {!loading &&
-          opportunities.length > 0 && (
-            <div className="grid min-w-0 grid-cols-1 gap-4 2xl:grid-cols-2">
-              {opportunities.map(
-                (airdrop, index) => (
-                  <AirdropCard
-                    key={
-                      airdrop?.id ||
-                      `${airdrop?.project || "airdrop"}-${index}`
-                    }
-                    airdrop={airdrop}
-                  />
-                )
-              )}
+          {!loading && scan && (
+            <div className="space-y-8">
+              <section>
+                <h2 className="mb-4 text-lg font-semibold">Received</h2>
+                {received.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    No confirmed airdrop transfers found for this wallet.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                    {received.map((item) => (
+                      <AirdropCard key={`r-${item.id}`} airdrop={item} />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section>
+                <h2 className="mb-4 text-lg font-semibold">
+                  Eligibility signals
+                </h2>
+                {others.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    No extra campaign match from the current database.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                    {others.map((item) => (
+                      <AirdropCard key={`o-${item.id}`} airdrop={item} />
+                    ))}
+                  </div>
+                )}
+              </section>
             </div>
           )}
+        </main>
       </div>
-    </section>
+    </div>
   );
 }
 
-export default AirdropRadar;
-
+function Stat({ label, value, accent }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+      <p
+        className={`mt-2 truncate text-2xl font-bold ${
+          accent ? "text-cyan-400" : "text-white"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
