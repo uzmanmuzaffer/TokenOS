@@ -6,10 +6,7 @@ import WalletButton from "../wallet/components/WalletButton";
 import PremiumButton from "./premium/PremiumButton";
 import PremiumModal from "./premium/PremiumModal";
 
-import {
-  registerVisit,
-  getVisitors,
-} from "../services/visitorService";
+import { registerVisit, getVisitors } from "../services/visitorService";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -43,95 +40,58 @@ function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 backdrop-blur-xl shadow-2xl">
-        <div className="mx-auto flex h-24 max-w-7xl items-center justify-between px-6">
-
-          {/* Logo */}
-          <Link
-            to="/"
-            className="flex items-center gap-5 transition duration-300 hover:opacity-90"
-          >
+      <nav className="sticky top-0 z-50 border-b border-slate-800 bg-[#070b14]/90 backdrop-blur-xl">
+        <div className="flex h-16 items-center justify-between gap-4 px-4 md:px-6">
+          <Link to="/dashboard" className="flex items-center gap-3 lg:hidden">
             <img
               src="/brand/logo-512.png"
               alt="TokenOS Logo"
-              className="
-                h-[72px]
-                w-[72px]
-                object-contain
-                transition-transform
-                duration-300
-                hover:scale-110
-                drop-shadow-[0_0_20px_rgba(34,211,238,0.45)]
-              "
+              className="h-8 w-8 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
             />
-
-            <div className="leading-tight">
-              <h1 className="text-4xl font-black tracking-tight text-white">
-                Token<span className="text-cyan-400">OS</span>
-              </h1>
-
-              <p className="mt-1 text-xs uppercase tracking-[0.35em] text-cyan-400">
-                AI Powered Crypto Terminal
-              </p>
-            </div>
+            <span className="text-lg font-semibold">
+              Token<span className="text-cyan-400">OS</span>
+            </span>
           </Link>
 
-          {/* Right Menu */}
-          <div className="flex items-center gap-4">
+          <div className="hidden items-center gap-4 text-sm text-slate-400 md:flex">
+            <Link to="/dashboard" className="hover:text-white">
+              Overview
+            </Link>
+            <Link to="/analyze" className="hover:text-white">
+              Analyzer
+            </Link>
+            <Link to="/airdrop-radar" className="hover:text-white">
+              Radar
+            </Link>
+          </div>
 
-            {/* Users */}
-            <div className="rounded-2xl border border-cyan-500/20 bg-slate-900/70 px-4 py-2 shadow-lg backdrop-blur">
-
-              <div className="text-[10px] uppercase tracking-[0.25em] text-slate-400">
+          <div className="ml-auto flex items-center gap-2 md:gap-3">
+            <div className="hidden rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-1.5 sm:block">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">
                 Users
               </div>
-
-              <div className="flex items-center gap-2 text-lg font-bold text-cyan-400">
-                👥
-                {visitors.toLocaleString("tr-TR")}
+              <div className="text-sm font-semibold text-cyan-400">
+                {Number(visitors || 0).toLocaleString("en-US")}
               </div>
-
             </div>
 
-            {/* Premium */}
-            <PremiumButton
-              onClick={() => setPremiumOpen(true)}
-            />
-
-            {/* Wallet */}
+            <PremiumButton onClick={() => setPremiumOpen(true)} />
             <WalletButton />
 
-            {/* Logout */}
             <button
               onClick={handleLogout}
-              className="
-                rounded-xl
-                bg-gradient-to-r
-                from-red-600
-                to-red-500
-                px-5
-                py-2.5
-                font-semibold
-                text-white
-                shadow-lg
-                transition-all
-                duration-300
-                hover:scale-105
-                hover:from-red-700
-                hover:to-red-600
-              "
+              className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:border-red-500/50 hover:text-white"
             >
               Logout
             </button>
-
           </div>
         </div>
       </nav>
 
-      <PremiumModal
-        isOpen={premiumOpen}
-        onClose={() => setPremiumOpen(false)}
-      />
+      <PremiumModal isOpen={premiumOpen} onClose={() => setPremiumOpen(false)} />
     </>
   );
 }

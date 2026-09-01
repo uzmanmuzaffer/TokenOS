@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Search } from "lucide-react";
+
 import useWalletStore from "../store/walletStore";
 import useWalletSync from "../wallet/hooks/useWalletSync";
 
@@ -22,85 +25,111 @@ import CryptoNews from "../components/dashboard/CryptoNews";
 function Dashboard() {
   useWalletSync();
 
-  const { data: walletData } = useWalletStore();
+  const { data: walletData, wallet, setWallet, analyze, loading } =
+    useWalletStore();
+
+  const [query, setQuery] = useState(wallet || "");
+
+  function handleQuickAnalyze(e) {
+    e.preventDefault();
+    const value = query.trim();
+    if (!value) return;
+    setWallet(value);
+    analyze(value);
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex">
-      {/* Sidebar */}
+    <div className="min-h-screen bg-[#070b14] text-white lg:flex">
       <Sidebar />
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col">
+      <div className="min-w-0 flex-1">
         <Navbar />
 
-        <main className="p-8">
-          {/* Hero */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold">
-              Token Analytics Dashboard
-            </h1>
+        <main className="p-4 md:p-6 lg:p-8">
+          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-400">
+                Terminal
+              </p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+                Overview
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Scan a wallet, then review risk, holdings and market context.
+              </p>
+            </div>
 
-            <p className="text-slate-400 mt-2">
-              AI destekli blockchain analiz platformu
-            </p>
+            <form
+              onSubmit={handleQuickAnalyze}
+              className="flex w-full max-w-xl gap-2"
+            >
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Paste wallet address (0x...)"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-cyan-500"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !query.trim()}
+                className="rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-400 disabled:opacity-50"
+              >
+                {loading ? "Scanning..." : "Scan"}
+              </button>
+            </form>
           </div>
 
-          {/* Stats */}
-          <div className="mb-8">
+          {!walletData && (
+            <div className="mb-6 rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 px-6 py-10 text-center">
+              <p className="text-lg font-medium">No wallet scanned yet</p>
+              <p className="mt-2 text-sm text-slate-400">
+                Paste an address above to load holdings, risk and AI context.
+              </p>
+            </div>
+          )}
+
+          <section className="mb-6">
             <StatsCards />
-          </div>
+          </section>
 
-          {/* Portfolio */}
-          <div className="mb-8">
+          <section className="mb-6">
             <PortfolioOverview data={walletData} />
-          </div>
+          </section>
 
-          {/* Wallet Score & Risk */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <section className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <WalletScore />
             <RiskGauge />
-          </div>
+          </section>
 
-          {/* Analytics */}
-          <div className="mb-8">
-            <AnalyticsPanel />
-          </div>
-
-          {/* Charts */}
-          <div className="mb-8">
-            <ChartsPanel />
-          </div>
-
-          {/* AI Insights */}
-          <div className="mb-8">
-            <AIInsights data={walletData} />
-          </div>
-
-          {/* Wallet Analyzer */}
-          <div className="mb-8">
+          <section className="mb-6">
             <WalletAnalyzer />
-          </div>
+          </section>
 
-          {/* Multi Chain Assets */}
-          <div className="mb-8">
-            <MultiChainAssets data={walletData} />
-          </div>
-
-          {/* Security Alerts */}
-          <div className="mb-8">
+          <section className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <AIInsights data={walletData} />
             <SecurityAlerts />
-          </div>
+          </section>
 
-          {/* Market */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+          <section className="mb-6">
+            <MultiChainAssets data={walletData} />
+          </section>
+
+          <section className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <AnalyticsPanel />
+            <ChartsPanel />
+          </section>
+
+          <section className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
             <TrendingTokens />
             <CryptoNews />
-          </div>
+          </section>
 
-          {/* Token Table */}
-          <div className="mb-8">
+          <section className="mb-6">
             <TokenTable />
-          </div>
+          </section>
         </main>
       </div>
     </div>

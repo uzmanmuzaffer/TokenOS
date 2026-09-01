@@ -3,8 +3,12 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { Link, useNavigate } from "react-router-dom";
 
+import PublicHeader from "../components/layout/PublicHeader";
+import { useToast } from "../components/ui/Toast";
+
 export default function Register() {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,72 +16,70 @@ export default function Register() {
 
   async function handleRegister(e) {
     e.preventDefault();
-
     setLoading(true);
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-
-      alert("Kayıt başarılı. Giriş yapabilirsiniz.");
-
+      toast.success("Account created. You can sign in now.");
       navigate("/login");
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message || "Registration failed.");
     }
 
     setLoading(false);
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <form
-        onSubmit={handleRegister}
-        className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl"
-      >
-        <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
-          Create Account
-        </h1>
+    <div className="min-h-screen bg-[#070b14] text-white">
+      <PublicHeader />
 
-        <p className="text-center text-gray-600 mb-6">
-          Register
-        </p>
-
-        <input
-          className="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-
-        <input
-          className="w-full border border-gray-300 p-3 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-green-500"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold p-3 rounded-lg transition disabled:opacity-50"
+      <div className="mx-auto flex min-h-[calc(100vh-64px)] max-w-md items-center px-5 py-16">
+        <form
+          onSubmit={handleRegister}
+          className="w-full rounded-2xl border border-slate-800 bg-slate-900/70 p-8 shadow-2xl"
         >
-          {loading ? "Loading..." : "Register"}
-        </button>
+          <h1 className="text-center text-2xl font-semibold">Create account</h1>
+          <p className="mt-2 text-center text-sm text-slate-400">
+            Free access to the wallet terminal
+          </p>
 
-        <p className="mt-6 text-center text-gray-700">
-          Already have an account?
-          <Link
-            to="/login"
-            className="ml-2 text-blue-600 hover:text-blue-700 font-medium"
+          <label className="mt-8 block text-sm text-slate-300">Email</label>
+          <input
+            className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white outline-none focus:border-cyan-500"
+            type="email"
+            placeholder="you@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <label className="mt-4 block text-sm text-slate-300">Password</label>
+          <input
+            className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white outline-none focus:border-cyan-500"
+            type="password"
+            placeholder="At least 6 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+          />
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-6 w-full rounded-xl bg-cyan-500 p-3 font-semibold text-slate-950 hover:bg-cyan-400 disabled:opacity-50"
           >
-            Login
-          </Link>
-        </p>
-      </form>
+            {loading ? "Creating account..." : "Register"}
+          </button>
+
+          <p className="mt-5 text-center text-sm text-slate-400">
+            Already have an account?
+            <Link className="ml-2 text-cyan-400 hover:text-cyan-300" to="/login">
+              Login
+            </Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

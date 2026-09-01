@@ -1,45 +1,22 @@
-
-import {
-  FaChartLine,
-  FaGift,
-  FaWallet,
-  FaRobot,
-  FaShieldAlt,
-  FaCoins,
-} from "react-icons/fa";
-
-import {
-  Link,
-  useLocation,
-} from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { LayoutDashboard, Gift, Search } from "lucide-react";
 
 const menuItems = [
   {
-    icon: <FaChartLine />,
-    title: "Dashboard",
+    title: "Overview",
     path: "/dashboard",
+    icon: LayoutDashboard,
   },
   {
-    icon: <FaGift />,
+    title: "Analyzer",
+    path: "/analyze",
+    icon: Search,
+  },
+  {
     title: "Airdrop Radar",
     path: "/airdrop-radar",
-    badge: "NEW",
-  },
-  {
-    icon: <FaWallet />,
-    title: "Wallet Analyzer",
-  },
-  {
-    icon: <FaCoins />,
-    title: "Token Radar",
-  },
-  {
-    icon: <FaRobot />,
-    title: "AI Insights",
-  },
-  {
-    icon: <FaShieldAlt />,
-    title: "Security",
+    icon: Gift,
+    badge: "New",
   },
 ];
 
@@ -47,170 +24,55 @@ function Sidebar() {
   const location = useLocation();
 
   return (
-    <aside className="w-72 min-h-screen bg-slate-950 border-r border-slate-800 flex flex-col">
-
-      {/* =========================
-          LOGO
-      ========================== */}
-
-      <div className="p-6 border-b border-slate-800">
-
-        <h1 className="text-3xl font-bold text-cyan-400">
-          TokenOS
-        </h1>
-
-        <p className="text-sm text-slate-400 mt-2">
-          AI Powered Crypto Terminal
-        </p>
-
+    <aside className="hidden w-72 shrink-0 flex-col border-r border-slate-800 bg-[#070b14] lg:flex">
+      <div className="border-b border-slate-800 p-6">
+        <Link to="/dashboard" className="block">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Token<span className="text-cyan-400">OS</span>
+          </h1>
+          <p className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-500">
+            Crypto terminal
+          </p>
+        </Link>
       </div>
 
-      {/* =========================
-          NAVIGATION
-      ========================== */}
-
-      <nav className="flex-1 p-4 space-y-2">
-
+      <nav className="flex-1 space-y-1 p-4">
         {menuItems.map((item) => {
-
-          const isActive =
-            item.path &&
-            location.pathname === item.path;
-
-          const className = `
-            w-full
-            flex
-            items-center
-            gap-4
-            px-4
-            py-3
-            rounded-xl
-            border
-            transition
-            ${
-              isActive
-                ? "bg-cyan-500/10 border-cyan-500 text-cyan-400"
-                : "bg-transparent border-transparent text-slate-400 hover:bg-slate-900 hover:text-white"
-            }
-          `;
-
-          const content = (
-            <>
-              {/* Icon */}
-              <span className="text-lg">
-                {item.icon}
-              </span>
-
-              {/* Title */}
-              <span className="font-medium flex-1">
-                {item.title}
-              </span>
-
-              {/* Badge */}
-              {item.badge && (
-                <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                  {item.badge}
-                </span>
-              )}
-            </>
-          );
-
-          {/* =========================
-              ACTIVE ROUTES
-          ========================== */}
-
-          if (item.path) {
-            return (
-              <Link
-                key={item.title}
-                to={item.path}
-                className={className}
-              >
-                {content}
-              </Link>
-            );
-          }
-
-          {/* =========================
-              FUTURE MENUS
-          ========================== */}
+          const Icon = item.icon;
+          const isActive = location.pathname === item.path;
 
           return (
-            <div
+            <Link
               key={item.title}
-              className={className}
+              to={item.path}
+              className={[
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition",
+                isActive
+                  ? "bg-cyan-500/10 text-white"
+                  : "text-slate-400 hover:bg-slate-900 hover:text-white",
+              ].join(" ")}
             >
-              {content}
-            </div>
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="flex-1">{item.title}</span>
+              {item.badge ? (
+                <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-cyan-300">
+                  {item.badge}
+                </span>
+              ) : null}
+            </Link>
           );
         })}
-
       </nav>
 
-      {/* =========================
-          AIRDROP RADAR INFO
-      ========================== */}
-
-      <div className="px-4 pb-4">
-
-        <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
-
-          <div className="flex items-center gap-3">
-
-            <div className="w-9 h-9 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400">
-              <FaGift />
-            </div>
-
-            <div>
-
-              <p className="text-xs text-slate-500">
-                Airdrop Radar
-              </p>
-
-              <p className="text-sm font-semibold text-white">
-                Discovery Active
-              </p>
-
-            </div>
-
-          </div>
-
-          <p className="text-xs text-slate-500 mt-3">
-            TokenOS is scanning supported sources
-            for new airdrop opportunities.
-          </p>
-
+      <div className="border-t border-slate-800 p-4">
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+          <p className="text-xs text-slate-500">Workspace</p>
+          <p className="mt-1 text-sm font-medium text-white">TokenOS v2.0</p>
+          <p className="mt-2 text-xs text-slate-600">Scan first. Ape later.</p>
         </div>
-
       </div>
-
-      {/* =========================
-          FOOTER
-      ========================== */}
-
-      <div className="p-5 border-t border-slate-800">
-
-        <div className="rounded-xl bg-slate-900 p-4">
-
-          <p className="text-sm text-slate-400">
-            Version
-          </p>
-
-          <h2 className="text-white font-semibold mt-1">
-            TokenOS v2.0
-          </h2>
-
-          <p className="text-xs text-slate-600 mt-2">
-            Scan First. Ape Later.
-          </p>
-
-        </div>
-
-      </div>
-
     </aside>
   );
 }
 
 export default Sidebar;
-

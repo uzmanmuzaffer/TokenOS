@@ -1,9 +1,17 @@
-
 @import "tailwindcss";
 
-/* ========================================
-   GLOBAL RESET
-======================================== */
+:root {
+  --bg: #070b14;
+  --bg-elevated: #0e1524;
+  --bg-card: #111827;
+  --line: #1e293b;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --accent: #22d3ee;
+  --accent-2: #38bdf8;
+  --danger: #f87171;
+  --ok: #34d399;
+}
 
 * {
   box-sizing: border-box;
@@ -11,7 +19,6 @@
 
 html {
   width: 100%;
-  min-width: 0;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -19,40 +26,23 @@ html {
 
 body {
   width: 100%;
-  min-width: 0;
   max-width: 100%;
   min-height: 100vh;
   margin: 0;
   padding: 0;
-
-  background-color: #020617;
-  color: #f8fafc;
-
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
   overflow-x: hidden;
 }
 
 #root {
   width: 100%;
-  min-width: 0;
-  max-width: 100%;
   min-height: 100vh;
-  overflow-x: hidden;
 }
-
-/* ========================================
-   IMAGES / MEDIA
-======================================== */
 
 img,
 svg,
@@ -65,18 +55,10 @@ img {
   height: auto;
 }
 
-/* ========================================
-   LINKS
-======================================== */
-
 a {
   text-decoration: none;
   color: inherit;
 }
-
-/* ========================================
-   FORM ELEMENTS
-======================================== */
 
 input,
 textarea,
@@ -86,31 +68,18 @@ button {
   max-width: 100%;
 }
 
-/* ========================================
-   TABLES
-======================================== */
-
-table {
-  max-width: 100%;
+button {
+  cursor: pointer;
 }
 
-th,
-td {
-  max-width: 100%;
+button:disabled {
+  cursor: not-allowed;
 }
-
-/* ========================================
-   LONG TEXT / WALLET ADDRESSES
-======================================== */
 
 .break-word {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
-
-/* ========================================
-   FLEX / GRID SAFETY
-======================================== */
 
 .flex,
 .grid {
@@ -122,42 +91,16 @@ td {
   min-width: 0;
 }
 
-/* ========================================
-   PREVENT HORIZONTAL OVERFLOW
-======================================== */
-
-main,
-section,
-header,
-footer,
-nav,
-article,
-aside,
-div {
-  max-width: 100%;
+::selection {
+  background: rgba(34, 211, 238, 0.28);
 }
 
-/* ========================================
-   WHITE CARDS
-======================================== */
-
-.bg-white {
-  color: #111827;
+input::placeholder,
+textarea::placeholder {
+  color: #64748b;
 }
-
-/* ========================================
-   MOBILE
-======================================== */
 
 @media (max-width: 768px) {
-  html,
-  body,
-  #root {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
   body {
     font-size: 14px;
   }
@@ -169,14 +112,3 @@ div {
     -webkit-overflow-scrolling: touch;
   }
 }
-
-/* ========================================
-   SMALL MOBILE
-======================================== */
-
-@media (max-width: 480px) {
-  body {
-    font-size: 13px;
-  }
-}
-

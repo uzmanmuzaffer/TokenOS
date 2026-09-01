@@ -1,12 +1,14 @@
-
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate, Link } from "react-router-dom";
 
-export default function Login() {
+import PublicHeader from "../components/layout/PublicHeader";
+import { useToast } from "../components/ui/Toast";
 
+export default function Login() {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,94 +16,68 @@ export default function Login() {
 
   async function handleLogin(e) {
     e.preventDefault();
-
     setLoading(true);
 
     try {
-
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
+      await signInWithEmailAndPassword(auth, email, password);
+      toast.success("Welcome back.");
       navigate("/dashboard");
-
     } catch (error) {
-
-      alert(error.message);
-
+      toast.error(error.message || "Login failed.");
     }
 
     setLoading(false);
   }
 
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950">
+    <div className="min-h-screen bg-[#070b14] text-white">
+      <PublicHeader />
 
-      <div className="absolute top-10 text-center">
-        <h1 className="text-4xl font-bold text-white">
-          TokenOS
-        </h1>
-
-        <p className="text-gray-400 mt-2">
-          AI-powered Web3 intelligence platform
-        </p>
-      </div>
-
-
-      <form
-        onSubmit={handleLogin}
-        className="bg-white/10 backdrop-blur-lg border border-white/20 p-8 rounded-2xl shadow-xl w-96"
-      >
-
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">
-          Welcome Back
-        </h2>
-
-
-        <input
-          className="w-full mb-4 p-3 rounded-lg bg-white/10 border border-gray-600 text-white"
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e)=>setEmail(e.target.value)}
-        />
-
-
-        <input
-          className="w-full mb-6 p-3 rounded-lg bg-white/10 border border-gray-600 text-white"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e)=>setPassword(e.target.value)}
-        />
-
-
-        <button
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-semibold"
-          disabled={loading}
+      <div className="mx-auto flex min-h-[calc(100vh-64px)] max-w-md items-center px-5 py-16">
+        <form
+          onSubmit={handleLogin}
+          className="w-full rounded-2xl border border-slate-800 bg-slate-900/70 p-8 shadow-2xl"
         >
-          {loading ? "Loading..." : "Login"}
-        </button>
+          <h1 className="text-center text-2xl font-semibold">Welcome back</h1>
+          <p className="mt-2 text-center text-sm text-slate-400">
+            Sign in to open the TokenOS terminal
+          </p>
 
+          <label className="mt-8 block text-sm text-slate-300">Email</label>
+          <input
+            className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white outline-none focus:border-cyan-500"
+            type="email"
+            placeholder="you@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-        <p className="text-gray-300 text-center mt-5">
-          No account?
+          <label className="mt-4 block text-sm text-slate-300">Password</label>
+          <input
+            className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white outline-none focus:border-cyan-500"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-          <Link
-            className="text-blue-400 ml-2"
-            to="/register"
+          <button
+            className="mt-6 w-full rounded-xl bg-cyan-500 p-3 font-semibold text-slate-950 hover:bg-cyan-400 disabled:opacity-50"
+            disabled={loading}
           >
-            Register
-          </Link>
+            {loading ? "Signing in..." : "Login"}
+          </button>
 
-        </p>
-
-      </form>
-
+          <p className="mt-5 text-center text-sm text-slate-400">
+            No account?
+            <Link className="ml-2 text-cyan-400 hover:text-cyan-300" to="/register">
+              Register
+            </Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }
-
