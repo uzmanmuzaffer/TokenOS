@@ -1,3 +1,4 @@
+
 const BASE_URL = "https://tokenos-api.onrender.com";
 
 // ==========================
@@ -5,44 +6,135 @@ const BASE_URL = "https://tokenos-api.onrender.com";
 // ==========================
 export async function getTokens() {
   try {
-    const response = await fetch(`${BASE_URL}/api/tokens`);
+    const response = await fetch(
+      `${BASE_URL}/api/tokens`
+    );
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(
+        `HTTP ${response.status}`
+      );
     }
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     return data.tokens || [];
   } catch (error) {
-    console.error("Token API Error:", error);
+    console.error(
+      "Token API Error:",
+      error
+    );
 
     return [];
   }
 }
 
 // ==========================
-// Wallet Analyzer API
+// TOKENOS MARKET API
 // ==========================
-export async function analyzeWallet(wallet) {
+export async function getTokenOSMarket() {
   try {
-    const response = await fetch(`${BASE_URL}/api/analyze-v2`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        wallet,
-      }),
-    });
+    const response = await fetch(
+      `${BASE_URL}/api/tokenos`,
+      {
+        cache: "no-store",
+      }
+    );
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    if (!data?.success) {
+      throw new Error(
+        data?.error ||
+        "TokenOS market unavailable."
+      );
+    }
+
+    return data;
+  } catch (error) {
+    console.error(
+      "TokenOS Market API Error:",
+      error
+    );
+
+    return {
+      success: false,
+
+      token: {
+        name: "TokenOS",
+        symbol: "TOS",
+        address:
+          "0xd6D3bE2330fFaaEE7e4d9b69C208f71033676d10",
+        network: "Base",
+        chain: "base",
+        totalSupply: 1000000000,
+
+        price: 0,
+        priceUsd: 0,
+
+        liquidity: 0,
+        liquidityUsd: 0,
+
+        marketCap: 0,
+        fdv: 0,
+
+        volume24h: 0,
+
+        dex: "-",
+        pair: "",
+
+        source: "none",
+        confidence: "none",
+
+        indexed: false,
+      },
+    };
+  }
+}
+
+// ==========================
+// Wallet Analyzer API
+// ==========================
+export async function analyzeWallet(
+  wallet
+) {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/analyze-v2`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          wallet,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
     }
 
     return await response.json();
   } catch (error) {
-    console.error("Wallet API Error:", error);
+    console.error(
+      "Wallet API Error:",
+      error
+    );
 
     return {
       success: false,
@@ -54,28 +146,39 @@ export async function analyzeWallet(wallet) {
 // ==========================
 // Premium AI Wallet Report API
 // ==========================
-export async function getAIWalletReport(wallet) {
+export async function getAIWalletReport(
+  wallet
+) {
   try {
-    const response = await fetch(
-      `${BASE_URL}/api/premium/ai-report`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          wallet,
-        }),
-      }
-    );
+    const response =
+      await fetch(
+        `${BASE_URL}/api/premium/ai-report`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            wallet,
+          }),
+        }
+      );
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(
+        `HTTP ${response.status}`
+      );
     }
 
     return await response.json();
   } catch (error) {
-    console.error("AI Report API Error:", error);
+    console.error(
+      "AI Report API Error:",
+      error
+    );
 
     return {
       success: false,
@@ -89,17 +192,25 @@ export async function getAIWalletReport(wallet) {
 // ==========================
 export async function getNews() {
   try {
-    const response = await fetch(`${BASE_URL}/api/news`);
+    const response = await fetch(
+      `${BASE_URL}/api/news`
+    );
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(
+        `HTTP ${response.status}`
+      );
     }
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
     return data.news || [];
   } catch (error) {
-    console.error("News API Error:", error);
+    console.error(
+      "News API Error:",
+      error
+    );
 
     return [];
   }
@@ -110,15 +221,20 @@ export async function getNews() {
 // ==========================
 export async function getAirdropOpportunities() {
   try {
-    const response = await fetch(
-      `${BASE_URL}/api/airdrop/`
-    );
+    const response =
+      await fetch(
+        `${BASE_URL}/api/airdrop/`
+      );
 
     if (!response.ok) {
-      const text = await response.text().catch(() => "");
+      const text =
+        await response
+          .text()
+          .catch(() => "");
 
       throw new Error(
-        text || `HTTP ${response.status}`
+        text ||
+          `HTTP ${response.status}`
       );
     }
 
@@ -131,9 +247,11 @@ export async function getAirdropOpportunities() {
 
     return {
       success: false,
+
       error:
         error?.message ||
         "Airdrop Radar request failed.",
+
       airdrops: [],
     };
   }
@@ -144,15 +262,20 @@ export async function getAirdropOpportunities() {
 // ==========================
 export async function refreshAirdropRadar() {
   try {
-    const response = await fetch(
-      `${BASE_URL}/api/airdrop/refresh`
-    );
+    const response =
+      await fetch(
+        `${BASE_URL}/api/airdrop/refresh`
+      );
 
     if (!response.ok) {
-      const text = await response.text().catch(() => "");
+      const text =
+        await response
+          .text()
+          .catch(() => "");
 
       throw new Error(
-        text || `HTTP ${response.status}`
+        text ||
+          `HTTP ${response.status}`
       );
     }
 
@@ -165,9 +288,11 @@ export async function refreshAirdropRadar() {
 
     return {
       success: false,
+
       error:
         error?.message ||
         "Airdrop refresh failed.",
+
       airdrops: [],
     };
   }
@@ -178,15 +303,20 @@ export async function refreshAirdropRadar() {
 // ==========================
 export async function getAirdropStats() {
   try {
-    const response = await fetch(
-      `${BASE_URL}/api/airdrop/stats`
-    );
+    const response =
+      await fetch(
+        `${BASE_URL}/api/airdrop/stats`
+      );
 
     if (!response.ok) {
-      const text = await response.text().catch(() => "");
+      const text =
+        await response
+          .text()
+          .catch(() => "");
 
       throw new Error(
-        text || `HTTP ${response.status}`
+        text ||
+          `HTTP ${response.status}`
       );
     }
 
@@ -199,6 +329,7 @@ export async function getAirdropStats() {
 
     return {
       success: false,
+
       error:
         error?.message ||
         "Airdrop stats request failed.",
@@ -220,40 +351,55 @@ export async function scanWalletAirdrops(
       );
     }
 
-    const response = await fetch(
-      `${BASE_URL}/api/airdrop/scan`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          wallet,
+    const response =
+      await fetch(
+        `${BASE_URL}/api/airdrop/scan`,
+        {
+          method: "POST",
 
-          transactionCount: Number(
-            walletData?.transactionCount ??
-              walletData?.portfolio?.transactionCount ??
-              0
-          ),
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
 
-          protocolCount: Number(
-            walletData?.protocolCount ??
-              walletData?.portfolio?.protocolCount ??
-              0
-          ),
+          body: JSON.stringify({
+            wallet,
 
-          chains: Array.isArray(
-            walletData?.chains
-          )
-            ? walletData.chains
-            : [],
-        }),
-      }
-    );
+            transactionCount:
+              Number(
+                walletData
+                  ?.transactionCount ??
+                  walletData
+                    ?.portfolio
+                    ?.transactionCount ??
+                  0
+              ),
+
+            protocolCount:
+              Number(
+                walletData
+                  ?.protocolCount ??
+                  walletData
+                    ?.portfolio
+                    ?.protocolCount ??
+                  0
+              ),
+
+            chains:
+              Array.isArray(
+                walletData?.chains
+              )
+                ? walletData.chains
+                : [],
+          }),
+        }
+      );
 
     if (!response.ok) {
       const text =
-        await response.text().catch(() => "");
+        await response
+          .text()
+          .catch(() => "");
 
       throw new Error(
         text ||
@@ -270,11 +416,15 @@ export async function scanWalletAirdrops(
 
     return {
       success: false,
+
       error:
         error?.message ||
         "Airdrop scan failed.",
+
       results: [],
+
       summary: {},
     };
   }
 }
+

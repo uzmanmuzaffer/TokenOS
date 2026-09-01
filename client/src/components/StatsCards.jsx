@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 
 import { getTokenInfo } from "../services/tokenService";
-import { getTokens } from "../services/api";
+import { getTokenOSMarket } from "../services/api";
 
 function StatsCards() {
   const [tokenInfo, setTokenInfo] = useState(null);
@@ -39,101 +39,78 @@ function StatsCards() {
         }
 
         // ==========================
-        // MARKET DATA
-        // Backend: /api/tokens
+        // TOKENOS LIVE MARKET
+        // Backend: /api/tokenos
+        // DexScreener -> Base -> Aerodrome
         // ==========================
 
-        const tokens = await getTokens();
+        const data =
+          await getTokenOSMarket();
 
-        if (!mounted || !Array.isArray(tokens)) {
+        if (!mounted) {
           return;
         }
 
-        /*
-         * /api/tokens currently returns the most active
-         * Base/Aerodrome tokens.
-         *
-         * We first try to find TOS by symbol/address.
-         * If TOS is not present, we keep the existing
-         * market values instead of displaying unrelated
-         * token data.
-         */
+        const liveToken =
+          data?.token || {};
 
-        const contract =
-          token?.contract?.toLowerCase?.() || "";
-
-        const tos = tokens.find((item) => {
-          const symbol =
-            String(item?.symbol || "").toLowerCase();
-
-          const address =
-            String(item?.address || "").toLowerCase();
-
-          return (
-            symbol === "tos" ||
-            address === contract
+        const price =
+          Number(
+            liveToken?.priceUsd ??
+              liveToken?.price ??
+              0
           );
+
+        const liquidity =
+          Number(
+            liveToken?.liquidityUsd ??
+              liveToken?.liquidity ??
+              0
+          );
+
+        const volume24h =
+          Number(
+            liveToken?.volume24h ??
+              0
+          );
+
+        const marketCap =
+          Number(
+            liveToken?.marketCap ??
+              liveToken?.fdv ??
+              0
+          );
+
+        setMarket({
+          priceUsd:
+            Number.isFinite(price)
+              ? price
+              : 0,
+
+          liquidity:
+            Number.isFinite(liquidity)
+              ? liquidity
+              : 0,
+
+          marketCap:
+            Number.isFinite(marketCap)
+              ? marketCap
+              : 0,
+
+          volume24h:
+            Number.isFinite(volume24h)
+              ? volume24h
+              : 0,
         });
 
-        if (tos) {
-          const price =
-            Number(
-              String(tos.price || "")
-                .replace("$", "")
-                .replace(/,/g, "")
-            ) || 0;
-
-          const liquidity =
-            Number(tos.liquidity || 0);
-
-          const volume24h =
-            Number(tos.volume || 0);
-
-          /*
-           * Market cap may not be supplied by the
-           * current /api/tokens endpoint.
-           *
-           * If it is available in the future, use it.
-           * Otherwise calculate it from total supply.
-           */
-
-          const suppliedMarketCap =
-            Number(
-              tos.marketCap ||
-                tos.fdv ||
-                0
-            );
-
-          const totalSupply =
-            Number(token?.totalSupply || 0);
-
-          const calculatedMarketCap =
-            suppliedMarketCap > 0
-              ? suppliedMarketCap
-              : price > 0 && totalSupply > 0
-              ? price * totalSupply
-              : 0;
-
-          setMarket({
-            priceUsd: price,
-            liquidity,
-            marketCap: calculatedMarketCap,
-            volume24h,
-          });
-
-          return;
-        }
-
-        /*
-         * TOS is not currently in the 10-token market
-         * response. Do not incorrectly display SOL,
-         * AERO, VVV, etc. as TokenOS.
-         *
-         * Keep the previous market source as fallback.
-         */
-
         console.log(
-          "TOS not found in /api/tokens response."
+          "✅ TokenOS live market:",
+          {
+            price,
+            liquidity,
+            marketCap,
+            volume24h,
+          }
         );
       } catch (error) {
         console.error(
@@ -145,10 +122,12 @@ function StatsCards() {
 
     load();
 
-    const timer = setInterval(
-      load,
-      30000
-    );
+    // Fiyatı 30 saniyede bir yenile.
+    const timer =
+      setInterval(
+        load,
+        30000
+      );
 
     return () => {
       mounted = false;
@@ -158,41 +137,52 @@ function StatsCards() {
 
   const safeSupply =
     Number(
-      tokenInfo?.totalSupply || 0
+      tokenInfo?.totalSupply ||
+        1000000000
     );
 
   const stats = [
     {
       title: "Token",
+
       value:
         tokenInfo?.name ||
         "TokenOS",
+
       change:
         tokenInfo?.symbol ||
         "TOS",
-      icon: <FaCoins />,
+
+      icon:
+        <FaCoins />,
+
       color:
         "text-cyan-400",
     },
 
     {
       title: "Price",
+
       value:
         market.priceUsd > 0
           ? `$${market.priceUsd.toFixed(6)}`
           : "Not Indexed",
+
       change:
         market.priceUsd > 0
-          ? "Live"
+          ? "Live • DexScreener"
           : "Waiting",
+
       icon:
         <FaChartLine />,
+
       color:
         "text-green-400",
     },
 
     {
       title: "Liquidity",
+
       value:
         market.liquidity > 0
           ? `$${market.liquidity.toLocaleString(
@@ -202,18 +192,22 @@ function StatsCards() {
               }
             )}`
           : "Not Indexed",
+
       change:
         market.liquidity > 0
-          ? "DEX"
+          ? "Aerodrome"
           : "Waiting",
+
       icon:
         <FaWallet />,
+
       color:
         "text-orange-400",
     },
 
     {
       title: "Market Cap",
+
       value:
         market.marketCap > 0
           ? `$${market.marketCap.toLocaleString(
@@ -223,35 +217,43 @@ function StatsCards() {
               }
             )}`
           : "Not Indexed",
+
       change:
         market.marketCap > 0
           ? "Live"
           : "Waiting",
+
       icon:
         <FaDatabase />,
+
       color:
         "text-purple-400",
     },
 
     {
       title: "Total Supply",
+
       value:
         safeSupply > 0
           ? safeSupply.toLocaleString(
               "en-US"
             )
           : "0",
+
       change:
         tokenInfo?.symbol ||
         "TOS",
+
       icon:
         <FaCoins />,
+
       color:
         "text-cyan-400",
     },
 
     {
       title: "24H Volume",
+
       value:
         market.volume24h > 0
           ? `$${market.volume24h.toLocaleString(
@@ -261,28 +263,37 @@ function StatsCards() {
               }
             )}`
           : "$0",
+
       change:
         market.volume24h > 0
-          ? "Volume"
+          ? "Live"
           : "Waiting",
+
       icon:
         <FaChartLine />,
+
       color:
         "text-blue-400",
     },
 
     {
       title: "Network",
+
       value: "Base",
+
       change: "Mainnet",
+
       icon:
         <FaDatabase />,
+
       color:
         "text-green-400",
     },
 
     {
-      title: "Contract Address",
+      title:
+        "Contract Address",
+
       value:
         tokenInfo?.contract
           ? `${tokenInfo.contract.slice(
@@ -291,14 +302,19 @@ function StatsCards() {
             )}...${tokenInfo.contract.slice(
               -4
             )}`
-          : "-",
+          : "0xd6D3...6d10",
+
       change: "Verified",
+
       icon:
         <FaCheckCircle />,
+
       color:
         "text-yellow-400",
+
       contract:
-        tokenInfo?.contract,
+        tokenInfo?.contract ||
+        "0xd6D3bE2330fFaaEE7e4d9b69C208f71033676d10",
     },
   ];
 
