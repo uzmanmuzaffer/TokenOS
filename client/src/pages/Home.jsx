@@ -194,6 +194,26 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-5 pb-8">
+        <div className="grid gap-5 rounded-3xl border border-slate-800 bg-slate-900/30 p-8 md:grid-cols-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-cyan-400">How TokenOS gets paid</p>
+            <h3 className="mt-3 text-2xl font-semibold">SaaS, not a casino.</h3>
+          </div>
+          <p className="text-sm leading-6 text-slate-400 md:col-span-2">
+            Free scans stay free. Revenue comes from Pro desks, API quotas and $0.99 deep reports.
+            Users can also earn 20% referral commission on a friend’s first paid month. The TOS token is not a yield product.
+          </p>
+          <Link
+            to="/pricing"
+            className="inline-flex w-fit items-center gap-2 text-sm font-medium text-cyan-400 hover:text-cyan-300 md:col-span-3"
+          >
+            Open pricing
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-6xl px-5 pb-20">
         <div className="rounded-3xl border border-cyan-500/20 bg-gradient-to-r from-slate-900 to-slate-950 p-10 text-center">
           <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-400">

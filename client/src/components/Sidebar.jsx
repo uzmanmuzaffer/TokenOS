@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Gift, Search } from "lucide-react";
+import { LayoutDashboard, Gift, Search, CreditCard } from "lucide-react";
 
 const menuItems = [
   {
@@ -17,6 +17,11 @@ const menuItems = [
     path: "/airdrop-radar",
     icon: Gift,
     badge: "New",
+  },
+  {
+    title: "Billing",
+    path: "/billing",
+    icon: CreditCard,
   },
 ];
 

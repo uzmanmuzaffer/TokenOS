@@ -1,0 +1,42 @@
+{
+  "accounts": {
+    "::1": {
+      "id": "::1",
+      "planId": "free",
+      "status": "active",
+      "referralCode": "f91bbeb8",
+      "referredBy": null,
+      "createdAt": "2026-09-02T13:07:57.415Z",
+      "usage": {
+        "day": "2026-09-02",
+        "month": "2026-09",
+        "scans": 0,
+        "aiBriefs": 0,
+        "airdropScans": 0,
+        "apiRequests": 0
+      },
+      "apiKeyIds": []
+    },
+    "test@local": {
+      "id": "test@local",
+      "planId": "free",
+      "status": "active",
+      "referralCode": "24bbb3b0",
+      "referredBy": null,
+      "createdAt": "2026-09-02T13:09:19.138Z",
+      "usage": {
+        "day": "2026-09-02",
+        "month": "2026-09",
+        "scans": 0,
+        "aiBriefs": 0,
+        "airdropScans": 0,
+        "apiRequests": 0
+      },
+      "apiKeyIds": []
+    }
+  },
+  "apiKeys": {},
+  "referrals": {},
+  "invoices": [],
+  "updatedAt": "2026-09-02T13:09:19.138Z"
+}

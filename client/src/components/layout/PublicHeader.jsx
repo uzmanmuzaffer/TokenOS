@@ -34,6 +34,12 @@ export default function PublicHeader() {
           <a href="/#how-it-works" className="text-sm text-slate-400 hover:text-white">
             How it works
           </a>
+          <NavLink to="/pricing" className={navLinkClass}>
+            Pricing
+          </NavLink>
+          <NavLink to="/developers" className={navLinkClass}>
+            API
+          </NavLink>
         </nav>
 
         <div className="flex items-center gap-3">

@@ -1,6 +1,12 @@
 import express from "express";
 import cors from "cors";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
+import rateLimit from "express-rate-limit";
+import billingRoutes from "./routes/billing.js";
+import { consumeQuota } from "./services/billingService.js";
+import { extractAccountId } from "./middleware/quota.js";
 
 import tosOnchainRoutes from "./routes/tosOnchainRoutes.js";
 
@@ -51,9 +57,9 @@ import {
   getTokenMarketData,
 } from "./services/tokenPrice.js";
 
-dotenv.config({
-  path: "C:/Users/MUZAFFER/Desktop/TokenOS/server/.env",
-});
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, ".env") });
+dotenv.config();
 
 const app = express();
 
@@ -67,6 +73,15 @@ const TOS_SUPPLY =
   1_000_000_000;
 
 app.use(cors());
+
+app.use(
+  rateLimit({
+    windowMs: 60 * 1000,
+    limit: 90,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  })
+);
 
 app.use(
   express.json({
@@ -97,6 +112,8 @@ app.use(
   "/api/premium",
   premiumRoutes
 );
+
+app.use("/api/billing", billingRoutes);
 
 /* ========================================
    TOKENOS ONCHAIN
@@ -453,6 +470,21 @@ app.post(
       }
 
       console.log("");
+
+            const quota = await consumeQuota(
+        extractAccountId(req),
+        "scans"
+      );
+
+      if (!quota.ok) {
+        return res.status(402).json({
+          success: false,
+          error: quota.message,
+          code: quota.code,
+          quota,
+          upgradeUrl: "/pricing",
+        });
+      }
 
       console.log(
         "========================================"

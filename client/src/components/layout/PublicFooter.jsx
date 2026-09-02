@@ -17,11 +17,14 @@ export default function PublicFooter() {
           <Link to="/analyze" className="hover:text-white">
             Analyzer
           </Link>
+          <Link to="/pricing" className="hover:text-white">
+            Pricing
+          </Link>
+          <Link to="/developers" className="hover:text-white">
+            API
+          </Link>
           <Link to="/login" className="hover:text-white">
             Login
-          </Link>
-          <Link to="/register" className="hover:text-white">
-            Register
           </Link>
         </div>
 
