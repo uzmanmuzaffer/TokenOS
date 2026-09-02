@@ -1,37 +1,41 @@
 import { useState } from "react";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { useLocation, Link } from "react-router-dom";
+import {
+  sendEmailVerification,
+  signInWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
 import { auth } from "../firebase";
-import { useNavigate, Link } from "react-router-dom";
 
 import PublicHeader from "../components/layout/PublicHeader";
 import { useToast } from "../components/ui/Toast";
 
-export default function Login() {
-  const navigate = useNavigate();
+export default function VerifyEmail() {
   const { toast } = useToast();
+  const location = useLocation();
+  const presetEmail = location.state?.email || "";
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(presetEmail);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e) {
+  async function resend(e) {
     e.preventDefault();
     setLoading(true);
 
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
 
-      if (!result.user.emailVerified) {
-        await signOut(auth);
-        toast.error("Önce mailindeki doğrulama linkine tıkla.");
-        navigate("/verify-email", { state: { email } });
+      if (result.user.emailVerified) {
+        toast.success("Mail zaten doğrulanmış. Giriş yapabilirsin.");
         return;
       }
 
-      toast.success("Welcome back.");
-      navigate("/dashboard");
+      await sendEmailVerification(result.user);
+      await signOut(auth);
+      toast.success("Yeni doğrulama maili gönderildi.");
     } catch (error) {
-      toast.error(error.message || "Login failed.");
+      toast.error(error.message || "Mail gönderilemedi.");
     }
 
     setLoading(false);
@@ -43,19 +47,19 @@ export default function Login() {
 
       <div className="mx-auto flex min-h-[calc(100vh-64px)] max-w-md items-center px-5 py-16">
         <form
-          onSubmit={handleLogin}
+          onSubmit={resend}
           className="w-full rounded-2xl border border-slate-800 bg-slate-900/70 p-8 shadow-2xl"
         >
-          <h1 className="text-center text-2xl font-semibold">Welcome back</h1>
-          <p className="mt-2 text-center text-sm text-slate-400">
-            Sign in to open the TokenOS terminal
+          <h1 className="text-center text-2xl font-semibold">Verify your email</h1>
+          <p className="mt-3 text-center text-sm leading-6 text-slate-400">
+            {email || "Hesabına"} adresine bir doğrulama linki gönderildi.
+            Spam klasörüne de bak. Linke tıkladıktan sonra giriş yap.
           </p>
 
           <label className="mt-8 block text-sm text-slate-300">Email</label>
           <input
             className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white outline-none focus:border-cyan-500"
             type="email"
-            placeholder="you@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -65,25 +69,25 @@ export default function Login() {
           <input
             className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white outline-none focus:border-cyan-500"
             type="password"
-            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
 
           <button
-            className="mt-6 w-full rounded-xl bg-cyan-500 p-3 font-semibold text-slate-950 hover:bg-cyan-400 disabled:opacity-50"
+            type="submit"
             disabled={loading}
+            className="mt-6 w-full rounded-xl bg-cyan-500 p-3 font-semibold text-slate-950 hover:bg-cyan-400 disabled:opacity-50"
           >
-            {loading ? "Signing in..." : "Login"}
+            {loading ? "Sending..." : "Resend verification mail"}
           </button>
 
-          <p className="mt-5 text-center text-sm text-slate-400">
-            No account?
-            <Link className="ml-2 text-cyan-400 hover:text-cyan-300" to="/register">
-              Register
-            </Link>
-          </p>
+          <Link
+            to="/login"
+            className="mt-5 block text-center text-sm text-cyan-400 hover:text-cyan-300"
+          >
+            Back to login
+          </Link>
         </form>
       </div>
     </div>

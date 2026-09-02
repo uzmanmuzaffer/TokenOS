@@ -111,7 +111,7 @@ export default function WalletAnalyzer() {
           </div>
 
           <div className="mt-8">
-            <AIWalletReport report={aiReport} />
+            <AIWalletReport report={aiReport} scan={data} />
           </div>
 
           {tokens.length > 0 && (

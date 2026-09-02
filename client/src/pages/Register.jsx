@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  signOut,
+} from "firebase/auth";
 import { auth } from "../firebase";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -19,9 +23,11 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      toast.success("Account created. You can sign in now.");
-      navigate("/login");
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(result.user);
+      await signOut(auth);
+      toast.success("Doğrulama maili gönderildi. Gelen kutusunu kontrol et.");
+      navigate("/verify-email", { state: { email } });
     } catch (error) {
       toast.error(error.message || "Registration failed.");
     }
@@ -40,7 +46,7 @@ export default function Register() {
         >
           <h1 className="text-center text-2xl font-semibold">Create account</h1>
           <p className="mt-2 text-center text-sm text-slate-400">
-            Free access to the wallet terminal
+            Mailine doğrulama linki gönderilir
           </p>
 
           <label className="mt-8 block text-sm text-slate-300">Email</label>
@@ -69,7 +75,7 @@ export default function Register() {
             disabled={loading}
             className="mt-6 w-full rounded-xl bg-cyan-500 p-3 font-semibold text-slate-950 hover:bg-cyan-400 disabled:opacity-50"
           >
-            {loading ? "Creating account..." : "Register"}
+            {loading ? "Sending mail..." : "Register"}
           </button>
 
           <p className="mt-5 text-center text-sm text-slate-400">

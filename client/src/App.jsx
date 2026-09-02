@@ -9,6 +9,7 @@ import Analyze from "./pages/Analyze";
 import Pricing from "./pages/Pricing";
 import Billing from "./pages/Billing";
 import Developers from "./pages/Developers";
+import VerifyEmail from "./pages/VerifyEmail";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ToastProvider } from "./components/ui/Toast";
@@ -21,6 +22,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/analyze" element={<Analyze />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/developers" element={<Developers />} />
