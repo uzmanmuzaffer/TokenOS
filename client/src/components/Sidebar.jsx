@@ -1,5 +1,12 @@
+
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Gift, Search, CreditCard } from "lucide-react";
+import {
+  LayoutDashboard,
+  Gift,
+  Search,
+  CreditCard,
+  Zap,
+} from "lucide-react";
 
 const menuItems = [
   {
@@ -15,6 +22,12 @@ const menuItems = [
   {
     title: "Airdrop Radar",
     path: "/airdrop-radar",
+    icon: Zap,
+    badge: "New",
+  },
+  {
+    title: "Earn",
+    path: "/earn",
     icon: Gift,
     badge: "New",
   },
@@ -58,7 +71,9 @@ function Sidebar() {
               ].join(" ")}
             >
               <Icon className="h-4 w-4 shrink-0" />
+
               <span className="flex-1">{item.title}</span>
+
               {item.badge ? (
                 <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-cyan-300">
                   {item.badge}
@@ -73,7 +88,9 @@ function Sidebar() {
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
           <p className="text-xs text-slate-500">Workspace</p>
           <p className="mt-1 text-sm font-medium text-white">TokenOS v2.0</p>
-          <p className="mt-2 text-xs text-slate-600">Scan first. Ape later.</p>
+          <p className="mt-2 text-xs text-slate-600">
+            Scan first. Ape later.
+          </p>
         </div>
       </div>
     </aside>
@@ -81,3 +98,4 @@ function Sidebar() {
 }
 
 export default Sidebar;
+

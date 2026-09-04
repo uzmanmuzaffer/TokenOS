@@ -8,9 +8,9 @@
       "referredBy": null,
       "createdAt": "2026-09-02T13:07:57.415Z",
       "usage": {
-        "day": "2026-09-02",
+        "day": "2026-09-04",
         "month": "2026-09",
-        "scans": 0,
+        "scans": 4,
         "aiBriefs": 0,
         "airdropScans": 0,
         "apiRequests": 0
@@ -33,10 +33,27 @@
         "apiRequests": 0
       },
       "apiKeyIds": []
+    },
+    "mzfrinci@gmail.com": {
+      "id": "mzfrinci@gmail.com",
+      "planId": "free",
+      "status": "active",
+      "referralCode": "b5fb112f",
+      "referredBy": null,
+      "createdAt": "2026-09-04T14:10:18.936Z",
+      "usage": {
+        "day": "2026-09-04",
+        "month": "2026-09",
+        "scans": 0,
+        "aiBriefs": 0,
+        "airdropScans": 0,
+        "apiRequests": 0
+      },
+      "apiKeyIds": []
     }
   },
   "apiKeys": {},
   "referrals": {},
   "invoices": [],
-  "updatedAt": "2026-09-02T13:09:19.138Z"
+  "updatedAt": "2026-09-04T14:57:10.181Z"
 }

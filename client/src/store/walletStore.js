@@ -1,18 +1,40 @@
 import { create } from "zustand";
-import { analyzeWallet } from "../services/api";
+import {
+  analyzeWallet,
+  getAIWalletReport,
+} from "../services/api";
 
 function reportText(result) {
   const ai = result?.ai;
-  if (typeof ai?.report === "string") return ai.report;
-  if (typeof ai?.report?.report === "string") return ai.report.report;
-  if (typeof result?.report?.aiReport === "string") return result.report.aiReport;
-  if (typeof result?.report === "string") return result.report;
+
+  if (typeof ai?.report === "string") {
+    return ai.report;
+  }
+
+  if (typeof ai?.report?.report === "string") {
+    return ai.report.report;
+  }
+
+  if (typeof result?.report?.aiReport === "string") {
+    return result.report.aiReport;
+  }
+
+  if (typeof result?.report === "string") {
+    return result.report;
+  }
+
   return "";
 }
 
 function buildScanError(result) {
-  if (!result) return "Wallet analysis failed.";
-  if (result.success === false && result.error) return result.error;
+  if (!result) {
+    return "Wallet analysis failed.";
+  }
+
+  if (result.success === false && result.error) {
+    return result.error;
+  }
+
   return null;
 }
 
@@ -31,7 +53,10 @@ const useWalletStore = create((set, get) => ({
 
   analyze: async (address) => {
     const wallet = String(address || get().wallet || "").trim();
-    if (!wallet) return;
+
+    if (!wallet) {
+      return null;
+    }
 
     set({
       wallet,
@@ -42,8 +67,12 @@ const useWalletStore = create((set, get) => ({
 
     try {
       const result = await analyzeWallet(wallet);
+
       const error = buildScanError(result);
-      const text = reportText(result);
+      const text =
+  result?.report?.report ||
+  result?.report ||
+  reportText(result);
 
       set({
         data: result,
@@ -54,22 +83,90 @@ const useWalletStore = create((set, get) => ({
           score: result?.score || null,
           security: result?.security || null,
           portfolio: result?.portfolio || null,
-          content: text || result?.error || "AI report unavailable.",
+          content:
+            text ||
+            result?.error ||
+            "AI report unavailable.",
         },
         loading: false,
         error,
       });
+
+      return result;
     } catch (err) {
       set({
         loading: false,
-        error: err.message || "Wallet analysis failed",
+        error:
+          err.message ||
+          "Wallet analysis failed",
       });
+
+      return null;
     }
   },
 
   generateAIReport: async () => {
-    const { wallet } = get();
-    if (wallet) await get().analyze(wallet);
+    const { wallet, data } = get();
+
+    if (!wallet || !data) {
+      return null;
+    }
+
+    set({
+      aiLoading: true,
+      error: null,
+    });
+
+    try {
+      const result =
+        await getAIWalletReport(wallet);
+
+      if (!result?.success) {
+        set({
+          aiLoading: false,
+          error:
+            result?.error ||
+            "AI report could not be generated.",
+        });
+
+        return result;
+      }
+
+      const text = reportText(result);
+
+      set({
+        aiReport: {
+          score:
+            result?.score ||
+            data?.score ||
+            null,
+          security:
+            result?.security ||
+            data?.security ||
+            null,
+          portfolio:
+            result?.portfolio ||
+            data?.portfolio ||
+            null,
+          content:
+            text ||
+            result?.report ||
+            "AI report generated successfully.",
+        },
+        aiLoading: false,
+      });
+
+      return result;
+    } catch (err) {
+      set({
+        aiLoading: false,
+        error:
+          err.message ||
+          "AI report could not be generated.",
+      });
+
+      return null;
+    }
   },
 
   clearWallet: () =>

@@ -427,4 +427,118 @@ export async function scanWalletAirdrops(
     };
   }
 }
+// ==========================
+// Rewards API
+// ==========================
+
+// GET /api/rewards/balance/:userId
+export async function getRewardBalance(userId) {
+  try {
+    if (!userId) {
+      throw new Error("User ID is required.");
+    }
+
+    const response = await fetch(
+      `${BASE_URL}/api/rewards/balance/${encodeURIComponent(userId)}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(
+      "Reward Balance API Error:",
+      error
+    );
+
+    return {
+      success: false,
+      error:
+        error?.message ||
+        "Failed to load reward balance.",
+    };
+  }
+}
+
+// POST /api/rewards/earn
+export async function earnReward(
+  userId,
+  activity
+) {
+  try {
+    if (!userId) {
+      throw new Error("User ID is required.");
+    }
+
+    if (!activity) {
+      throw new Error(
+        "Reward activity is required."
+      );
+    }
+
+    const response = await fetch(
+      `${BASE_URL}/api/rewards/earn`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          userId,
+          activity,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(
+      "Earn Reward API Error:",
+      error
+    );
+
+    return {
+      success: false,
+      error:
+        error?.message ||
+        "Failed to earn reward.",
+    };
+  }
+}
+
+// GET /api/rewards/config
+export async function getRewardConfig() {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/rewards/config`
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(
+      "Reward Config API Error:",
+      error
+    );
+
+    return {
+      success: false,
+      error:
+        error?.message ||
+        "Failed to load reward configuration.",
+    };
+  }
+}
 

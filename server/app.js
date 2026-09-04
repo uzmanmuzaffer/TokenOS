@@ -14,6 +14,7 @@ import premiumRoutes from "./routes/premium.js";
 import newsRoutes from "./routes/news.js";
 import paymentRoutes from "./routes/payment.js";
 import airdropRoutes from "./routes/airdropRoutes.js";
+import rewardRoutes from "./routes/rewardRoutes.js";
 
 import {
   scanAirdropSources,
@@ -114,6 +115,11 @@ app.use(
 );
 
 app.use("/api/billing", billingRoutes);
+
+app.use(
+  "/api/rewards",
+  rewardRoutes
+);
 
 /* ========================================
    TOKENOS ONCHAIN

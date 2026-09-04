@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
@@ -5,6 +6,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import AirdropRadar from "./pages/AirdropRadar";
+import Earn from "./pages/Earn";
 import Analyze from "./pages/Analyze";
 import Pricing from "./pages/Pricing";
 import Billing from "./pages/Billing";
@@ -48,6 +50,15 @@ function App() {
           />
 
           <Route
+            path="/earn"
+            element={
+              <ProtectedRoute>
+                <Earn />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/billing"
             element={
               <ProtectedRoute>
@@ -62,3 +73,4 @@ function App() {
 }
 
 export default App;
+

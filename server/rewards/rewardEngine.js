@@ -1,44 +1,44 @@
+
+import { createClient } from "@supabase/supabase-js";
+
+// ============================================
+// REWARD CONFIG
+// ============================================
+
 const REWARD_CONFIG = {
   TOKEN_SCAN: 10,
   WALLET_ANALYSIS: 25,
   AIRDROP_SCAN: 20,
   AI_ANALYSIS: 15,
   REFERRAL: 500,
-  DAILY_LIMIT: 1000
+  DAILY_LIMIT: 1000,
 };
 
-const userRewards = new Map();
+// ============================================
+// SUPABASE
+// ============================================
 
-function getToday() {
-  return new Date().toISOString().slice(0, 10);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl) {
+  console.warn("⚠️ SUPABASE_URL is missing");
 }
 
-function getUser(userId) {
-  if (!userRewards.has(userId)) {
-    userRewards.set(userId, {
-      userId,
-      points: 0,
-      dailyEarned: 0,
-      lastRewardDate: getToday(),
-      activities: {},
-      referrals: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-  }
-
-  const user = userRewards.get(userId);
-
-  if (user.lastRewardDate !== getToday()) {
-    user.dailyEarned = 0;
-    user.lastRewardDate = getToday();
-    user.activities = {};
-  }
-
-  return user;
+if (!supabaseServiceKey) {
+  console.warn("⚠️ SUPABASE_SERVICE_ROLE_KEY is missing");
 }
 
-export function addReward(userId, activity) {
+const supabase = createClient(
+  supabaseUrl || "",
+  supabaseServiceKey || ""
+);
+
+// ============================================
+// ADD REWARD
+// ============================================
+
+export async function addReward(userId, activity) {
   if (!userId) {
     throw new Error("userId is required");
   }
@@ -47,90 +47,193 @@ export function addReward(userId, activity) {
     throw new Error(`Unknown reward activity: ${activity}`);
   }
 
-  const user = getUser(userId);
   const rewardAmount = REWARD_CONFIG[activity];
-  const remaining = REWARD_CONFIG.DAILY_LIMIT - user.dailyEarned;
 
-  if (remaining <= 0) {
-    return {
-      success: false,
-      reason: "DAILY_LIMIT_REACHED",
-      reward: 0,
-      points: user.points
-    };
+  const { data, error } = await supabase.rpc(
+    "add_reward_atomic",
+    {
+      p_user_id: String(userId),
+      p_activity: activity,
+      p_reward_amount: rewardAmount,
+      p_daily_limit: REWARD_CONFIG.DAILY_LIMIT,
+      p_is_referral: false,
+    }
+  );
+
+  if (error) {
+    console.error("❌ Supabase add reward error:", error);
+
+    throw new Error(
+      error.message || "Failed to add reward"
+    );
   }
 
-  const actualReward = Math.min(rewardAmount, remaining);
+  const result = Array.isArray(data) ? data[0] : data;
 
-  user.points += actualReward;
-  user.dailyEarned += actualReward;
-
-  user.activities[activity] =
-    (user.activities[activity] || 0) + 1;
-
-  user.updatedAt = new Date().toISOString();
+  if (!result) {
+    throw new Error("Reward response is empty");
+  }
 
   return {
-    success: true,
+    success: result.success,
+    reason: result.reason || null,
     activity,
-    reward: actualReward,
-    points: user.points,
-    dailyEarned: user.dailyEarned,
-    dailyRemaining:
-      REWARD_CONFIG.DAILY_LIMIT - user.dailyEarned
+    reward: result.reward || 0,
+    points: result.points || 0,
+    dailyEarned: result.daily_earned || 0,
+    dailyRemaining: result.daily_remaining || 0,
+    referrals: result.referrals || 0,
   };
 }
 
-export function getRewardBalance(userId) {
-  const user = getUser(userId);
+// ============================================
+// GET REWARD BALANCE
+// ============================================
+
+export async function getRewardBalance(userId) {
+  if (!userId) {
+    throw new Error("userId is required");
+  }
+
+  const { data, error } = await supabase.rpc(
+    "get_reward_balance",
+    {
+      p_user_id: String(userId),
+      p_daily_limit: REWARD_CONFIG.DAILY_LIMIT,
+    }
+  );
+
+  if (error) {
+    console.error(
+      "❌ Supabase reward balance error:",
+      error
+    );
+
+    throw new Error(
+      error.message || "Failed to get reward balance"
+    );
+  }
+
+  const result = Array.isArray(data) ? data[0] : data;
+
+  if (!result) {
+    throw new Error("Reward balance response is empty");
+  }
 
   return {
     success: true,
-    userId: user.userId,
-    points: user.points,
-    dailyEarned: user.dailyEarned,
-    dailyRemaining:
-      REWARD_CONFIG.DAILY_LIMIT - user.dailyEarned,
-    activities: user.activities,
-    referrals: user.referrals
+    userId: String(userId),
+    points: result.points || 0,
+    dailyEarned: result.daily_earned || 0,
+    dailyRemaining: result.daily_remaining || 0,
+    activities: result.activities || {},
+    referrals: result.referrals || 0,
   };
 }
 
-export function addReferralReward(userId) {
-  const result = addReward(userId, "REFERRAL");
+// ============================================
+// REFERRAL REWARD
+// ============================================
 
-  if (result.success) {
-    const user = getUser(userId);
-    user.referrals += 1;
+export async function addReferralReward(userId) {
+  if (!userId) {
+    throw new Error("userId is required");
   }
 
-  return result;
-}
+  const rewardAmount = REWARD_CONFIG.REFERRAL;
 
-export function getRewardStats() {
-  let totalPoints = 0;
+  const { data, error } = await supabase.rpc(
+    "add_reward_atomic",
+    {
+      p_user_id: String(userId),
+      p_activity: "REFERRAL",
+      p_reward_amount: rewardAmount,
+      p_daily_limit: REWARD_CONFIG.DAILY_LIMIT,
+      p_is_referral: true,
+    }
+  );
 
-  for (const user of userRewards.values()) {
-    totalPoints += user.points;
+  if (error) {
+    console.error(
+      "❌ Supabase referral reward error:",
+      error
+    );
+
+    throw new Error(
+      error.message || "Failed to add referral reward"
+    );
+  }
+
+  const result = Array.isArray(data) ? data[0] : data;
+
+  if (!result) {
+    throw new Error("Referral reward response is empty");
   }
 
   return {
-    success: true,
-    totalUsers: userRewards.size,
-    totalPoints
+    success: result.success,
+    reason: result.reason || null,
+    activity: "REFERRAL",
+    reward: result.reward || 0,
+    points: result.points || 0,
+    dailyEarned: result.daily_earned || 0,
+    dailyRemaining: result.daily_remaining || 0,
+    referrals: result.referrals || 0,
   };
 }
+
+// ============================================
+// REWARD STATS
+// ============================================
+
+export async function getRewardStats() {
+  const { data, error } = await supabase
+    .from("user_rewards")
+    .select("points");
+
+  if (error) {
+    console.error(
+      "❌ Supabase reward stats error:",
+      error
+    );
+
+    throw new Error(
+      error.message || "Failed to get reward stats"
+    );
+  }
+
+  const users = data || [];
+
+  const totalPoints = users.reduce(
+    (total, user) =>
+      total + Number(user.points || 0),
+    0
+  );
+
+  return {
+    success: true,
+    totalUsers: users.length,
+    totalPoints,
+  };
+}
+
+// ============================================
+// REWARD CONFIG
+// ============================================
 
 export function getRewardConfig() {
   return {
     success: true,
+
     rewards: {
       tokenScan: REWARD_CONFIG.TOKEN_SCAN,
       walletAnalysis: REWARD_CONFIG.WALLET_ANALYSIS,
       airdropScan: REWARD_CONFIG.AIRDROP_SCAN,
       aiAnalysis: REWARD_CONFIG.AI_ANALYSIS,
-      referral: REWARD_CONFIG.REFERRAL
+      referral: REWARD_CONFIG.REFERRAL,
     },
-    dailyLimit: REWARD_CONFIG.DAILY_LIMIT
+
+    dailyLimit: REWARD_CONFIG.DAILY_LIMIT,
   };
 }
+
