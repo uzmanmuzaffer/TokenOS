@@ -30,6 +30,8 @@ function App() {
           <Route path="/developers" element={<Developers />} />
           <Route path="/features" element={<Home />} />
           <Route path="/how-it-works" element={<Home />} />
+          <Route path="/analyze" element={<Analyze />} />
+          <Route path="/analyzer" element={<Navigate to="/analyze" replace />} />
 
           <Route
             path="/dashboard"
@@ -64,11 +66,13 @@ function App() {
               <ProtectedRoute>
                 <Billing />
               </ProtectedRoute>
-            }
+
+            }<Route path="*" element={<Navigate to="/analyze" replace />} />
           />
         </Routes>
       </BrowserRouter>
     </ToastProvider>
+      
   );
 }
 
