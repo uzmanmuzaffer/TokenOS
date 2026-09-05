@@ -1,3 +1,4 @@
+
 import { create } from "zustand";
 import {
   analyzeWallet,
@@ -38,6 +39,69 @@ function buildScanError(result) {
   return null;
 }
 
+/**
+ * Backend'den gelen:
+ *
+ * results: [
+ *   { chain, tokens: [...] },
+ *   { chain, tokens: [...] }
+ * ]
+ *
+ * yapısını tek bir token listesine çevirir.
+ */
+function flattenTokens(result) {
+  if (!Array.isArray(result?.results)) {
+    return [];
+  }
+
+  return result.results.flatMap((chainResult) => {
+    if (!Array.isArray(chainResult?.tokens)) {
+      return [];
+    }
+
+    return chainResult.tokens.map((token) => ({
+      ...token,
+      chain:
+        token?.chain ||
+        chainResult?.chain ||
+        "",
+      chainId:
+        token?.chainId ||
+        chainResult?.chainId ||
+        "",
+    }));
+  });
+}
+
+function normalizePortfolio(result) {
+  const backendPortfolio = result?.portfolio || {};
+  const tokens = flattenTokens(result);
+
+  return {
+    ...backendPortfolio,
+
+    totalChains:
+      backendPortfolio.totalChains ??
+      result?.analyzedChains ??
+      0,
+
+    totalTokens:
+      backendPortfolio.totalTokens ??
+      tokens.length,
+
+    totalValue:
+      backendPortfolio.totalValue ??
+      0,
+
+    tokens,
+
+    chains:
+      backendPortfolio.chains ||
+      result?.chains ||
+      [],
+  };
+}
+
 const useWalletStore = create((set, get) => ({
   wallet: "",
   data: null,
@@ -52,7 +116,9 @@ const useWalletStore = create((set, get) => ({
   setWallet: (wallet) => set({ wallet }),
 
   analyze: async (address) => {
-    const wallet = String(address || get().wallet || "").trim();
+    const wallet = String(
+      address || get().wallet || ""
+    ).trim();
 
     if (!wallet) {
       return null;
@@ -69,31 +135,52 @@ const useWalletStore = create((set, get) => ({
       const result = await analyzeWallet(wallet);
 
       const error = buildScanError(result);
+
+      const portfolio = normalizePortfolio(result);
+
       const text =
-  result?.report?.report ||
-  result?.report ||
-  reportText(result);
+        result?.report?.report ||
+        result?.report ||
+        reportText(result);
+
+      /**
+       * Frontend'in kullanacağı normalize edilmiş veri.
+       *
+       * Backend verisini bozmuyoruz.
+       * Sadece portfolio.tokens ekliyoruz.
+       */
+      const normalizedResult = {
+        ...result,
+        portfolio,
+      };
 
       set({
-        data: result,
-        portfolio: result?.portfolio || null,
+        data: normalizedResult,
+        portfolio,
         security: result?.security || null,
         score: result?.score || null,
+
         aiReport: {
           score: result?.score || null,
           security: result?.security || null,
-          portfolio: result?.portfolio || null,
+          portfolio,
           content:
             text ||
             result?.error ||
             "AI report unavailable.",
         },
+
         loading: false,
         error,
       });
 
-      return result;
+      return normalizedResult;
     } catch (err) {
+      console.error(
+        "Wallet analysis error:",
+        err
+      );
+
       set({
         loading: false,
         error:
@@ -134,30 +221,44 @@ const useWalletStore = create((set, get) => ({
 
       const text = reportText(result);
 
+      const currentPortfolio =
+        get().portfolio ||
+        data?.portfolio ||
+        null;
+
       set({
         aiReport: {
           score:
             result?.score ||
             data?.score ||
             null,
+
           security:
             result?.security ||
             data?.security ||
             null,
+
           portfolio:
             result?.portfolio ||
-            data?.portfolio ||
+            currentPortfolio ||
             null,
+
           content:
             text ||
             result?.report ||
             "AI report generated successfully.",
         },
+
         aiLoading: false,
       });
 
       return result;
     } catch (err) {
+      console.error(
+        "AI report error:",
+        err
+      );
+
       set({
         aiLoading: false,
         error:
@@ -184,3 +285,4 @@ const useWalletStore = create((set, get) => ({
 }));
 
 export default useWalletStore;
+
