@@ -5,8 +5,7 @@ import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import rateLimit from "express-rate-limit";
 import billingRoutes from "./routes/billing.js";
-import { consumeQuota } from "./services/billingService.js";
-import { extractAccountId } from "./middleware/quota.js";
+
 
 import tosOnchainRoutes from "./routes/tosOnchainRoutes.js";
 
@@ -477,20 +476,7 @@ app.post(
 
       console.log("");
 
-            const quota = await consumeQuota(
-        extractAccountId(req),
-        "scans"
-      );
-
-      if (!quota.ok) {
-        return res.status(402).json({
-          success: false,
-          error: quota.message,
-          code: quota.code,
-          quota,
-          upgradeUrl: "/pricing",
-        });
-      }
+          
 
       console.log(
         "========================================"
