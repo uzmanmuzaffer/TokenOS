@@ -1,12 +1,11 @@
-import axios from "axios";
 
-const DEXSCREENER_URL =
-  "https://api.dexscreener.com/latest/dex/tokens";
+import axios from "axios";
 
 const TOKEN_BATCH_SIZE = 30;
 
 const client = axios.create({
-  baseURL: "https://api.dexscreener.com/latest/dex",
+  baseURL:
+    "https://api.dexscreener.com/latest/dex",
   timeout: 10000,
   headers: {
     Accept: "application/json",
@@ -78,15 +77,32 @@ function chunkArray(array, size) {
 /*
  * DexScreener fiyatlarını toplu şekilde al.
  *
- * Aynı token farklı chainlerde bulunabileceği için
- * chain + address anahtarı kullanıyoruz.
+ * Arc native USDC özellikle burada
+ * dışarıda bırakılır.
  */
-async function getDexScreenerPrices(tokens) {
+async function getDexScreenerPrices(
+  tokens
+) {
   const priceMap = new Map();
-
   const grouped = new Map();
 
   for (const token of tokens) {
+    /*
+     * Arc native USDC için DexScreener
+     * kullanmıyoruz.
+     */
+    if (
+      String(
+        token?.chainId ||
+          token?.chain ||
+          ""
+      ).toLowerCase() === "arc" &&
+      token?.isNative === true &&
+      token?.isUSDC === true
+    ) {
+      continue;
+    }
+
     const address =
       String(
         token?.token_address || ""
@@ -115,7 +131,9 @@ async function getDexScreenerPrices(tokens) {
   }
 
   const uniqueTokens =
-    Array.from(grouped.values());
+    Array.from(
+      grouped.values()
+    );
 
   console.log(
     `💰 Portfolio fiyatları: ${uniqueTokens.length} token`
@@ -137,13 +155,19 @@ async function getDexScreenerPrices(tokens) {
           )
           .join(",");
 
+      if (!addresses) {
+        continue;
+      }
+
       const { data } =
         await client.get(
           `/tokens/${addresses}`
         );
 
       const pairs =
-        Array.isArray(data?.pairs)
+        Array.isArray(
+          data?.pairs
+        )
           ? data.pairs
           : [];
 
@@ -159,12 +183,6 @@ async function getDexScreenerPrices(tokens) {
               ""
           ).toLowerCase();
 
-        const quoteAddress =
-          String(
-            pair?.quoteToken?.address ||
-              ""
-          ).toLowerCase();
-
         const price =
           Number(
             pair?.priceUsd || 0
@@ -172,79 +190,43 @@ async function getDexScreenerPrices(tokens) {
 
         if (
           !chain ||
-          !price ||
-          !Number.isFinite(price)
+          !baseAddress ||
+          !Number.isFinite(price) ||
+          price <= 0
         ) {
           continue;
         }
 
-        /*
-         * Token base token ise doğrudan priceUsd kullan.
-         */
-        if (baseAddress) {
-          const key =
-            `${chain}:${baseAddress}`;
+        const key =
+          `${chain}:${baseAddress}`;
 
-          const current =
-            priceMap.get(key);
+        const liquidity =
+          Number(
+            pair?.liquidity?.usd || 0
+          );
 
-          const liquidity =
-            Number(
-              pair?.liquidity?.usd || 0
-            );
-
-          /*
-           * Aynı token için en yüksek
-           * likiditeli pair'i tercih et.
-           */
-          if (
-            !current ||
-            liquidity >
-              current.liquidity
-          ) {
-            priceMap.set(key, {
-              price,
-              liquidity,
-              pairAddress:
-                pair?.pairAddress || "",
-              dex:
-                pair?.dexId || "-",
-            });
-          }
-        }
+        const current =
+          priceMap.get(key);
 
         /*
-         * Token quote tarafındaysa,
-         * fiyatı tersine çevir.
+         * Aynı token için en yüksek
+         * likiditeli pair'i tercih et.
          */
         if (
-          quoteAddress &&
-          quoteAddress !== baseAddress
+          !current ||
+          liquidity >
+            current.liquidity
         ) {
-          const key =
-            `${chain}:${quoteAddress}`;
+          priceMap.set(key, {
+            price,
+            liquidity,
 
-          const basePrice =
-            Number(
-              pair?.priceUsd || 0
-            );
+            pairAddress:
+              pair?.pairAddress || "",
 
-          const quoteToken =
-            pair?.quoteToken;
-
-          /*
-           * quote token fiyatını doğru
-           * hesaplamak için base/quote
-           * fiyat oranını kullan.
-           *
-           * DexScreener priceUsd base token
-           * fiyatıdır. Quote token için
-           * doğrudan güvenilir USD fiyatı
-           * her pair'de çıkarılamayabilir.
-           *
-           * Bu nedenle yalnızca base token
-           * fiyatını güvenilir kaynak kabul ediyoruz.
-           */
+            dex:
+              pair?.dexId || "-",
+          });
         }
       }
     } catch (error) {
@@ -263,7 +245,8 @@ export async function buildPortfolioSummary(
 ) {
   const successfulChains =
     results.filter(
-      (chain) => chain.success
+      (chain) =>
+        chain?.success === true
     );
 
   const chains = [];
@@ -271,9 +254,18 @@ export async function buildPortfolioSummary(
 
   let totalTokens = 0;
 
-  for (const chain of successfulChains) {
+  /*
+   * =====================================
+   * CHAIN TOKENLARINI TOPLA
+   * =====================================
+   */
+  for (
+    const chain of successfulChains
+  ) {
     const chainTokens =
-      Array.isArray(chain.tokens)
+      Array.isArray(
+        chain?.tokens
+      )
         ? chain.tokens
         : [];
 
@@ -281,13 +273,19 @@ export async function buildPortfolioSummary(
       chainTokens.length;
 
     chains.push({
-      chain: chain.chain,
+      chain:
+        chain?.chain || "Unknown",
+
       tokenCount:
         chainTokens.length,
     });
 
-    for (const token of chainTokens) {
-      if (isSpamToken(token)) {
+    for (
+      const token of chainTokens
+    ) {
+      if (
+        isSpamToken(token)
+      ) {
         continue;
       }
 
@@ -304,7 +302,14 @@ export async function buildPortfolioSummary(
   }
 
   /*
-   * Gerçek USD fiyatlarını DexScreener'dan al.
+   * =====================================
+   * DEXSCREENER
+   * =====================================
+   *
+   * Sadece normal tokenlar.
+   *
+   * Arc native USDC özel olarak
+   * DexScreener'a gönderilmez.
    */
   const priceMap =
     await getDexScreenerPrices(
@@ -315,10 +320,18 @@ export async function buildPortfolioSummary(
 
   const allTokens = [];
 
-  for (const token of allRawTokens) {
+  /*
+   * =====================================
+   * TOKEN VALUATION
+   * =====================================
+   */
+  for (
+    const token of allRawTokens
+  ) {
     const balance =
       Number(
-        token?.balance_formatted ?? 0
+        token?.balance_formatted ??
+          0
       );
 
     if (
@@ -328,11 +341,6 @@ export async function buildPortfolioSummary(
       continue;
     }
 
-    const address =
-      String(
-        token?.token_address || ""
-      ).toLowerCase();
-
     const chain =
       String(
         token?.chainId ||
@@ -340,36 +348,127 @@ export async function buildPortfolioSummary(
           ""
       ).toLowerCase();
 
+    /*
+     * ===================================
+     * ARC NATIVE USDC
+     * ===================================
+     *
+     * Arc native USDC'nin fiyatı:
+     *
+     * 1 USDC = $1
+     *
+     * Değer:
+     *
+     * balance × $1
+     *
+     * Provider'dan gelen usdValue
+     * varsa onu kullanıyoruz.
+     */
+    if (
+      chain === "arc" &&
+      token?.isNative === true &&
+      token?.isUSDC === true
+    ) {
+      const arcValue =
+        Number(
+          token?.usdValue ??
+            balance
+        );
+
+      if (
+        !Number.isFinite(
+          arcValue
+        ) ||
+        arcValue <= 0
+      ) {
+        continue;
+      }
+
+      totalValue +=
+        arcValue;
+
+      allTokens.push({
+        chain: "arc",
+
+        symbol:
+          "USDC",
+
+        name:
+          "USD Coin",
+
+        balance:
+          Number(
+            balance.toFixed(6)
+          ),
+
+        price: 1,
+
+        value:
+          Number(
+            arcValue.toFixed(2)
+          ),
+
+        logo:
+          token?.logo || "",
+
+        address:
+          token?.token_address ||
+          "",
+
+        priceSource:
+          "arc-native-usdc",
+
+        pairAddress:
+          "",
+
+        dex:
+          "Arc",
+      });
+
+      continue;
+    }
+
+    /*
+     * ===================================
+     * NORMAL EVM TOKEN
+     * ===================================
+     */
+
+    const address =
+      String(
+        token?.token_address || ""
+      ).toLowerCase();
+
+    if (!address) {
+      continue;
+    }
+
     const key =
       `${chain}:${address}`;
 
-    /*
-     * Önce DexScreener.
-     * Sonra token objesindeki mevcut
-     * USD fiyat alanlarını fallback olarak kullan.
-     */
     const dexData =
       priceMap.get(key);
 
-    const existingPrice =
-      Number(
-        token?.usd_price ??
-          token?.usdPrice ??
-          token?.priceUsd ??
-          token?.price ??
-          0
-      );
-
+    /*
+     * KRİTİK:
+     *
+     * Artık token.price,
+     * token.usd_price vb.
+     * kontrolsüz fallback olarak
+     * kullanılmıyor.
+     *
+     * Sadece DexScreener fiyatı
+     * güvenilir kabul ediliyor.
+     */
     const price =
       Number(
-        dexData?.price ||
-          existingPrice ||
-          0
+        dexData?.price || 0
       );
 
     /*
-     * Fiyat bulunamadıysa portföy
-     * değerine dahil etme.
+     * Gerçek piyasa fiyatı yoksa
+     * token portföy değerine
+     * dahil edilmiyor.
      */
     if (
       !Number.isFinite(price) ||
@@ -396,10 +495,12 @@ export async function buildPortfolioSummary(
         chain,
 
       symbol:
-        token?.symbol || "???",
+        token?.symbol ||
+        "???",
 
       name:
-        token?.name || "Unknown",
+        token?.name ||
+        "Unknown",
 
       balance:
         Number(
@@ -420,12 +521,11 @@ export async function buildPortfolioSummary(
         token?.logo || "",
 
       address:
-        token?.token_address || "",
+        token?.token_address ||
+        "",
 
       priceSource:
-        dexData
-          ? "dexscreener"
-          : "token-data",
+        "dexscreener",
 
       pairAddress:
         dexData?.pairAddress ||
@@ -438,7 +538,9 @@ export async function buildPortfolioSummary(
   }
 
   /*
-   * En yüksek değerden düşük değere sırala.
+   * =====================================
+   * SIRALAMA
+   * =====================================
    */
   const tokens =
     allTokens
@@ -446,26 +548,33 @@ export async function buildPortfolioSummary(
         (a, b) =>
           b.value - a.value
       )
-      .map((token) => ({
-        ...token,
+      .map(
+        (token) => ({
+          ...token,
 
-        allocation:
-          totalValue > 0
-            ? Number(
-                (
-                  (token.value /
-                    totalValue) *
-                  100
-                ).toFixed(2)
-              )
-            : 0,
-      }));
+          allocation:
+            totalValue > 0
+              ? Number(
+                  (
+                    (token.value /
+                      totalValue) *
+                    100
+                  ).toFixed(2)
+                )
+              : 0,
+        })
+      );
 
   const largestHolding =
     tokens.length > 0
       ? tokens[0]
       : null;
 
+  /*
+   * =====================================
+   * LOGS
+   * =====================================
+   */
   console.log(
     `💵 Portfolio Value: $${totalValue.toFixed(2)}`
   );
@@ -476,10 +585,16 @@ export async function buildPortfolioSummary(
 
   console.log(
     `🏆 Largest Holding: ${
-      largestHolding?.symbol || "-"
+      largestHolding?.symbol ||
+      "-"
     }`
   );
 
+  /*
+   * =====================================
+   * RESULT
+   * =====================================
+   */
   return {
     totalChains:
       successfulChains.length,
@@ -498,3 +613,4 @@ export async function buildPortfolioSummary(
     tokens,
   };
 }
+

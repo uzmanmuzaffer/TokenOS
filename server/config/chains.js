@@ -1,3 +1,5 @@
+import { ARC_TESTNET } from "./arc.js";
+
 /**
  * TokenOS
  * Supported Blockchain Networks
@@ -38,6 +40,17 @@ export const CHAINS = [
     id: "optimism",
     name: "Optimism",
     type: "evm",
+    enabled: true,
+  },
+
+  // ==========================
+  // Arc Testnet
+  // ==========================
+  {
+    id: ARC_TESTNET.id,
+    name: ARC_TESTNET.name,
+    type: "arc",
+    chainId: ARC_TESTNET.chainId,
     enabled: true,
   },
 ];
