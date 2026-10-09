@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -19,22 +19,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-
-      if (!result.user.emailVerified) {
-        await signOut(auth);
-        toast.error("Önce mailindeki doğrulama linkine tıkla.");
-        navigate("/verify-email", { state: { email } });
-        return;
-      }
+      await signInWithEmailAndPassword(auth, email, password);
 
       toast.success("Welcome back.");
       navigate("/dashboard");
     } catch (error) {
       toast.error(error.message || "Login failed.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
