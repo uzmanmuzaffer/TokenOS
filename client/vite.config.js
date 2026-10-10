@@ -7,4 +7,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  resolve: {
+    dedupe: [
+      "react",
+      "react-dom",
+      "wagmi",
+      "@wagmi/core",
+      "@tanstack/react-query",
+    ],
+  },
 });
